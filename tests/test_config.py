@@ -14,13 +14,23 @@ def test_default_config() -> None:
     assert cfg.encoder_depths == [3, 3, 9, 3]
     assert cfg.drop_path_rate == 0.1
     assert cfg.D == 2
+    assert cfg.n_heads == 8
+    assert cfg.d_ff == 3072
+    assert cfg.d_expert == 256
+    assert cfg.window_size == 4
+    assert cfg.num_transformer_blocks == 6
+    assert cfg.num_experts == 512
+    assert cfg.moe_top_k == 8
+    assert cfg.moe_capacity_factor == 1.25
 
 
 def test_custom_config() -> None:
-    cfg = ModelConfig(in_chans=4, num_classes=5, D=3)
+    cfg = ModelConfig(in_chans=4, num_classes=5, D=3, n_heads=16, num_experts=256)
     assert cfg.in_chans == 4
     assert cfg.num_classes == 5
     assert cfg.D == 3
+    assert cfg.n_heads == 16
+    assert cfg.num_experts == 256
 
 
 def test_immutable_default() -> None:
