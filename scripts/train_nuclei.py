@@ -3,26 +3,33 @@
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 
-from prometheus import UNetNuclei
-from prometheus.config import ModelConfig
+from prometheus import CombinedLoss, UNetNuclei
+from prometheus.config import ModelConfig, TrainingConfig
 
 
 def main() -> None:
-    cfg = ModelConfig(in_chans=3, num_classes=1)
-    model = UNetNuclei(config=cfg)
+    model_cfg = ModelConfig(in_chans=3, num_classes=1)
+    train_cfg = TrainingConfig(batch_size=2, epochs=5)
+
+    model = UNetNuclei(config=model_cfg)
     model.train()
 
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
-    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=train_cfg.lr,
+        weight_decay=train_cfg.weight_decay,
+        betas=train_cfg.betas,
+        eps=train_cfg.eps,
+    )
+    criterion = CombinedLoss(bce_weight=1.0, dice_weight=1.0)
 
-    dummy_input = torch.randn(2, 3, 256, 256)
-    dummy_mask = torch.randn(2, 1024)
-    dummy_target = torch.randn(2, 1, 256, 256)
+    dummy_input = torch.randn(train_cfg.batch_size, 3, 256, 256)
+    dummy_mask = torch.randn(train_cfg.batch_size, 1024)
+    dummy_target = torch.randn(train_cfg.batch_size, 1, 256, 256)
 
-    for step in range(5):
+    for step in range(train_cfg.epochs):
         optimizer.zero_grad()
         output = model(dummy_input, dummy_mask)
         loss = criterion(output, dummy_target)
