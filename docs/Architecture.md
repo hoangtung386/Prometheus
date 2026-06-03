@@ -2,12 +2,11 @@
 
 ## Overview
 
-Prometheus is a medical image segmentation framework built on a **ConvNeXt-v2 U-Net** backbone. It provides three model variants:
+Prometheus is a medical image segmentation framework built on a **ConvNeXt-v2 U-Net** backbone. It provides two model variants:
 
 | Model | Description |
 |-------|-------------|
 | **UNetTissue** | Standard ConvNeXt U-Net for tissue segmentation |
-| **UNetNuclei** | Extended U-Net with MinkowskiEngine sparse tissue-mask encoder + transformer bottleneck |
 | **DualUNet** | Dual-stream architecture: tissue stream + nuclei stream with cross-attention fusion |
 
 ## Core Configuration
@@ -19,7 +18,7 @@ ModelConfig:
   encoder_dims: [96, 192, 384, 768]
   encoder_depths: [3, 3, 9, 3]
   drop_path_rate: 0.1
-  D: 2  # spatial dimension (2D or 3D for MinkowskiEngine)
+  D: 2
 ```
 
 ## Model Hierarchy
@@ -60,17 +59,6 @@ classDiagram
         +forward(x, context?) Tensor
     }
 
-    class MinkowskiConvNeXtBlock {
-        +dwconv: MinkowskiConvolution(3x3, groups=dim)
-        +norm: MinkowskiLayerNorm
-        +pwconv1: MinkowskiLinear(dim, 4*dim)
-        +act: GELU
-        +grn: MinkowskiGRN(4*dim)
-        +pwconv2: MinkowskiLinear(4*dim, dim)
-        +drop_path: MinkowskiDropPath
-        +forward(x) SparseTensor
-    }
-
 ```
 
 ## UNetTissue
@@ -98,7 +86,7 @@ flowchart TB
 
     subgraph Decoder["ConvNeXt Decoder"]
         direction TB
-        L0["Level 0<br/>(B, 384, H/16, W/16)<br/>Upsample + Skip + ConvNeXtBlock ×3"]
+        L0["Level 0<br/>(B, 384, H/16, W/16)<br/>Upsample + Skip + ConvNeXtBlock ×9"]
         L1["Level 1<br/>(B, 192, H/8, W/8)<br/>Upsample + Skip + ConvNeXtBlock ×3"]
         L2["Level 2<br/>(B, 96, H/4, W/4)<br/>Upsample + Skip + ConvNeXtBlock ×3"]
         OH["Output Head<br/>ConvTranspose2d(4x4, s4) + Conv2d(1x1)<br/>(B, num_classes, H, W)"]
@@ -168,102 +156,11 @@ flowchart LR
     end
 ```
 
-## UNetNuclei
-
-**File:** `src/prometheus/models/unet_nuclei.py`
-
-Extends the base U-Net with a **MinkowskiEngine sparse tissue-mask encoder** and a concatenated second encoder at the bottleneck. Requires the tissue mask as a second input.
-
-```mermaid
-flowchart TB
-    subgraph Inputs["Inputs"]
-        I["Image<br/>(B, 3, H, W)"]
-        TM["Tissue Mask<br/>(B, N_points)"]
-    end
-
-    subgraph Encoder["EncoderNuclei<br/>(ConvNeXt U-Net Encoder)"]
-        ENC["Stem + 4 Stages<br/>with Downsampling<br/>produces bottleneck + skips"]
-    end
-
-    subgraph Sparse["EncoderFeaturesMaskTissue<br/>(MinkowskiEngine)"]
-        UM["Upsample Mask<br/>to (H/16, W/16)"]
-        MASK["Mask Features<br/>x *= (1 - mask)"]
-        SP["to_sparse() → SparseTensor"]
-        MS1["Stage 1<br/>MinkowskiConvNeXtBlock ×3<br/>dim=96"]
-        MD1["Down 1<br/>MinkowskiConv<br/>2x2, s2"]
-        MS2["Stage 2<br/>MinkowskiConvNeXtBlock ×3<br/>dim=192"]
-        MD2["Down 2<br/>MinkowskiConv<br/>2x2, s2"]
-        MS3["Stage 3<br/>MinkowskiConvNeXtBlock ×9<br/>dim=384"]
-        MD3["Down 3<br/>MinkowskiConv<br/>2x2, s2"]
-        MS4["Stage 4<br/>MinkowskiConvNeXtBlock ×3<br/>dim=768"]
-        DENSE["dense() → Tensor<br/>(B, 768, H/32, W/32)"]
-    end
-
-    subgraph Fusion["Feature Fusion"]
-        ADD["x + tissue_features"]
-    end
-
-    subgraph TransformerEncoder["TransformerEncoderNuclei<br/>(Second ConvNeXt Encoder)"]
-        TE["Stem + 4 Stages<br/>with Downsampling"]
-    end
-
-    subgraph Decoder["DecoderNuclei<br/>(ConvNeXt U-Net Decoder)"]
-        DEC["3 Levels + Output Head"]
-    end
-
-    I --> ENC
-    ENC -->|"bottleneck (B, 768, H/32, W/32)"| ADD
-    ENC -->|"skips"| Decoder
-
-    TM --> UM
-    ENC -->|"bottleneck features"| UM
-    UM --> MASK
-    MASK --> SP
-    SP --> MS1
-    MS1 --> MD1
-    MD1 --> MS2
-    MS2 --> MD2
-    MD2 --> MS3
-    MS3 --> MD3
-    MD3 --> MS4
-    MS4 --> DENSE
-    DENSE --> ADD
-
-    ADD --> TE
-    TE -->|"bottleneck"| Decoder
-    TE -->|"skips"| Decoder
-    DEC --> O["Output<br/>(B, num_classes, H, W)"]
-
-    style Inputs fill:#e1f5fe
-    style Encoder fill:#e8f5e9
-    style Sparse fill:#f3e5f5
-    style Fusion fill:#fff8e1
-    style TransformerEncoder fill:#e0f2f1
-    style Decoder fill:#fff3e0
-```
-
-### MinkowskiConvNeXtBlock Detail
-
-```mermaid
-flowchart LR
-    subgraph MinkowskiBlock["MinkowskiConvNeXtBlock(dim, drop_path, D)"]
-        I["SparseTensor<br/>(features: C)"] --> DW["MinkowskiConvolution<br/>3×3 depthwise, groups=C"]
-        DW --> LN["MinkowskiLayerNorm"]
-        LN --> FC1["MinkowskiLinear(C → 4C)"]
-        FC1 --> G["GELU"]
-        G --> GRN["MinkowskiGRN(4C)"]
-        GRN --> FC2["MinkowskiLinear(4C → C)"]
-        FC2 --> DP["MinkowskiDropPath"]
-        DP --> ADD["+ Residual"]
-        ADD --> O["SparseTensor<br/>(features: C)"]
-    end
-```
-
 ## DualUNet
 
 **File:** `src/prometheus/models/unet_dual.py`
 
-A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded and fused into the nuclei bottleneck via **LocalGlobalAttention** cross-attention. Does not require MinkowskiEngine.
+A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded and fused into the nuclei bottleneck via **LocalGlobalAttention** cross-attention.
 
 ```mermaid
 flowchart TB
@@ -287,7 +184,7 @@ flowchart TB
     subgraph Nuclei["Nuclei Stream"]
         direction TB
         NE["Encoder<br/>Stem + 4 ConvNeXt Stages"]
-        CA["LocalGlobalAttention<br/>d_model=768, n_heads=8<br/>window_size=2<br/>Q: nuclei, K/V: tissue"]
+        CA["LocalGlobalAttention<br/>d_model=768, n_heads=8<br/>window_size=4<br/>Q: nuclei, K/V: tissue"]
         ND["TissueDecoder<br/>(nuclei decoder)<br/>3 Decoder Levels"]
         OH2["Mask Head<br/>ConvTranspose2d(4x4) + Conv2d(1x1)"]
     end
@@ -322,7 +219,7 @@ flowchart TB
 flowchart LR
     subgraph Fusion["Cross-Attention (in DualUNet)"]
         NB["Nuclei Bottleneck<br/>(B, 768, H/32, W/32)"] --> FL["Flatten + Transpose<br/>(B, L, 768)"]
-        TB["Tissue Bottleneck<br/>(B, 768, H/32, W/32)"] --> FL2["Flatten + Transpose<br/>(B, L, 768)"]
+        TB["Tissue Context<br/>(B, 768, H/32, W/32)"] --> FL2["Flatten + Transpose<br/>(B, L, 768)"]
 
         FL --> Q["Q Projection"]
         FL2 --> K["K Projection"]
@@ -415,26 +312,23 @@ flowchart LR
 src/prometheus/
 ├── config.py                     ModelConfig dataclass
 ├── blocks/
+│   ├── attention.py              LocalGlobalAttention
 │   ├── convnext_block.py         ConvNeXtBlock
 │   ├── decoder_block.py          DecoderBlock
-│   ├── attention.py              LocalGlobalAttention, CrossAttention
-│   └── minkowski_block.py        MinkowskiConvNeXtBlock
+│   ├── moe.py                    Expert, SparseMoE
+│   └── transformer_block.py      EncoderTransformerBlock, EncoderTransformerStack
 ├── models/
 │   ├── _base_unet.py             build_encoder, forward_encoder,
 │   │                             build_decoder, forward_decoder
 │   ├── unet_tissue.py            UNetTissue
-│   ├── unet_nuclei.py            UNetNuclei
 │   └── unet_dual.py              DualUNet
 └── utils/
-    ├── norm.py                   LayerNorm, GRN
-    └── minkowski_utils.py        MinkowskiGRN, MinkowskiDropPath,
-                                  MinkowskiLayerNorm, require_minkowski_engine
+    └── norm.py                   LayerNorm, GRN
 ```
 
 ## Design Highlights
 
 1. **ConvNeXt-v2 backbone:** Depthwise 7×7 conv + LayerNorm + GELU + GRN + DropPath — no BatchNorm, no ReLU.
 2. **Local-Global Attention:** 50/50 head split between windowed (Swin-style) and full-sequence attention.
-3. **MinkowskiEngine sparse conv:** `UNetNuclei` uses sparse 3×3 ConvNeXt blocks on masked tissue features for efficiency.
-4. **Stop-gradient isolation:** `DualUNet` uses `.detach()` to prevent nuclei gradients from flowing into the tissue decoder, allowing independent training of each stream.
-5. **Stochastic depth scheduling:** Drop path rates linearly increase from 0 to `drop_path_rate` across all blocks following ConvNeXt convention.
+3. **Stop-gradient isolation:** `DualUNet` uses `.detach()` to prevent nuclei gradients from flowing into the tissue decoder, allowing independent training of each stream.
+4. **Stochastic depth scheduling:** Drop path rates linearly increase from 0 to `drop_path_rate` across all blocks following ConvNeXt convention.
