@@ -54,9 +54,41 @@ classDiagram
         +local_heads: int (n_heads//2)
         +global_heads: int
         +window_size: int
+        +d_model: int
+        +d_head: int
         +q_proj, k_proj, v_proj: Linear
         +out_proj: Linear
         +forward(x, context?) Tensor
+    }
+
+    class EncoderTransformerBlock {
+        +self_attn: LocalGlobalAttention
+        +ffn: Sequential(Linear, GELU, Linear)
+        +cross_attn: LocalGlobalAttention
+        +moe: SparseMoE
+        +norm1..8: LayerNorm
+        +dropout: Dropout
+        +forward(x, context?) Tuple[Tensor, Tensor]
+    }
+
+    class EncoderTransformerStack {
+        +blocks: ModuleList[EncoderTransformerBlock]
+        +forward(x, context?) Tuple[Tensor, Tensor]
+    }
+
+    class Expert {
+        +fc1: Linear(d_expert, d_ff)
+        +act: SiLU
+        +fc2: Linear(d_ff, d_expert)
+        +forward(x) Tensor
+    }
+
+    class SparseMoE {
+        +down_proj: Linear(d_model, d_expert)
+        +up_proj: Linear(d_expert, d_model)
+        +gate: Linear(d_model, num_experts)
+        +experts: ModuleList[Expert]
+        +forward(x) Tuple[Tensor, Tensor]
     }
 
 ```
@@ -223,11 +255,11 @@ flowchart LR
         IN["x: (B, L, D)"] --> SA["Self-Attention<br/>LocalGlobalAttention<br/>Q=K=V=x"]
         SA --> SA_RES["+ x<br/>(Pre-LN residual)"]
         SA_RES --> FFN["Dense FFN<br/>Linear(D → 4D) → GELU → Linear(4D → D)"]
-        FFN --> FFN_RES["+ input<br/>(Pre-LN residual)"]
+        FFN --> FFN_RES["+ x<br/>(Pre-LN residual)"]
         FFN_RES --> CA["Cross-Attention<br/>LocalGlobalAttention<br/>Q=x, K=V=context"]
-        CA --> CA_RES["+ input<br/>(Pre-LN residual)"]
+        CA --> CA_RES["+ x<br/>(Pre-LN residual)"]
         CA_RES --> MOE["Sparse MoE<br/>DownProj → top-k gate → experts → UpProj"]
-        MOE --> MOE_RES["+ input<br/>(Pre-LN residual)"]
+        MOE --> MOE_RES["+ x<br/>(Pre-LN residual)"]
         MOE_RES --> OUT["output: (B, L, D)"]
 
         CTX["context: (B, S, D)<br/>(from TissueAttentionEncoder)"] -.-> CA
@@ -252,7 +284,9 @@ flowchart TB
 
         Q --> SPLIT["Split Heads"]
         K --> SPLIT2["Split Heads"]
+        K2 --> SPLIT2
         V --> SPLIT3["Split Heads"]
+        V2 --> SPLIT3
 
         SPLIT --> L["Local Heads (n/2)"]
         SPLIT --> G["Global Heads (n/2)"]
