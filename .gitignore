@@ -38,7 +38,8 @@ weights/
 runs/
 logs/
 wandb/
-data/
+/data/
 *.pt
 *.pth
 *.ckpt
+dataset/
