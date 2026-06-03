@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+*.so
+*.pyd
+.pytest_cache/
+*.coverage
+htmlcov/
+.coverage.*
+coverage.xml
+
+# Environments
+.env
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+checkpoints/
+weights/
+runs/
+logs/
+wandb/
+data/
+*.pt
+*.pth
+*.ckpt
