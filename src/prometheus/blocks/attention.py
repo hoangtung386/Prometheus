@@ -8,12 +8,6 @@ import torch.nn.functional as F
 
 
 class LocalGlobalAttention(nn.Module):
-    """Local-Global multi-head attention.
-
-    Supports both self-attention and cross-attention modes.
-    In cross-attention mode, Q comes from *x* while K, V come from *context*.
-    """
-
     def __init__(self, d_model: int, n_heads: int, window_size: int = 4) -> None:
         super().__init__()
         assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
@@ -81,31 +75,4 @@ class LocalGlobalAttention(nn.Module):
 
         out = torch.cat([out_loc, out_glob], dim=1)
         out = out.transpose(1, 2).contiguous().view(B, L, D)
-        return self.out_proj(out)
-
-
-class CrossAttention(nn.Module):
-    """Simple vanilla cross-attention (without local/global split)."""
-
-    def __init__(self, d_model: int, n_heads: int = 8) -> None:
-        super().__init__()
-        assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
-        self.n_heads = n_heads
-        self.d_head = d_model // n_heads
-
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, d_model)
-        self.v_proj = nn.Linear(d_model, d_model)
-        self.out_proj = nn.Linear(d_model, d_model)
-
-    def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
-        B, L, D = x.shape
-        S = context.shape[1]
-
-        q = self.q_proj(x).view(B, L, self.n_heads, self.d_head).transpose(1, 2)
-        k = self.k_proj(context).view(B, S, self.n_heads, self.d_head).transpose(1, 2)
-        v = self.v_proj(context).view(B, S, self.n_heads, self.d_head).transpose(1, 2)
-
-        attn = F.softmax(q @ k.transpose(-2, -1) * (self.d_head ** -0.5), dim=-1)
-        out = (attn @ v).transpose(1, 2).contiguous().view(B, L, D)
         return self.out_proj(out)
