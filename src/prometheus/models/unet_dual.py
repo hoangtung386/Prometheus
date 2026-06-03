@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
 
-from ..blocks import LocalGlobalAttention
+from ..blocks.transformer_block import EncoderTransformerStack
 from ..config import ModelConfig
 from ..utils import LayerNorm
-from ._base_unet import build_decoder, build_encoder
+from ._base_unet import build_decoder, build_encoder, forward_decoder, forward_encoder
 
 
 class TissueAttentionEncoder(nn.Module):
-    """Encodes tissue feature map into bottleneck-level features for cross-attention."""
+    """Encoder_Attention: encodes tissue decoder features into bottleneck context.
+
+    Matches the diagram: Output_Tissue → Stop Gradient → Encoder_Attention
+    """
 
     def __init__(self, in_channels: int, dims: List[int]) -> None:
         super().__init__()
@@ -37,34 +40,25 @@ class TissueAttentionEncoder(nn.Module):
 
 
 class TissueDecoder(nn.Module):
-    """Decoder that returns both mask and feature map."""
-
     def __init__(self, encoder_dims: List[int], encoder_depths: List[int], num_classes: int = 1) -> None:
         super().__init__()
-        self.levels, _ = build_decoder(encoder_dims, encoder_depths)
-
-        self.feature_head = nn.ConvTranspose2d(encoder_dims[0], encoder_dims[0], kernel_size=4, stride=4)
-        self.mask_head = nn.Conv2d(encoder_dims[0], num_classes, kernel_size=1)
+        self.levels, output_head = build_decoder(encoder_dims, encoder_depths, num_classes)
+        self.feature_head = output_head[0]
+        self.mask_head = output_head[1]
 
     def forward(
         self, x: torch.Tensor, skips: List[List[torch.Tensor]]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         for level in range(3):
             stage_skips = skips[2 - level]
             for j, layer in enumerate(self.levels[level]):
                 x = layer(x, stage_skips[j])
-        features = self.feature_head(x)
-        mask = self.mask_head(features)
-        return mask, features
+        full_res_feat = self.feature_head(x)
+        mask = self.mask_head(full_res_feat)
+        return mask, full_res_feat
 
 
 class DualUNet(nn.Module):
-    """Unified dual-stream architecture for tissue and nuclei segmentation.
-
-    Tissue stream produces a tissue mask. Its feature map is then encoded
-    (with stop-gradient) and fused into the nuclei stream via cross-attention.
-    """
-
     def __init__(self, config: Optional[ModelConfig] = None) -> None:
         super().__init__()
         if config is None:
@@ -86,13 +80,10 @@ class DualUNet(nn.Module):
             num_classes=config.num_classes,
         )
 
-        # === TISSUE → NUCLEI BRIDGE ===
+        # === TISSUE → NUCLEI BRIDGE (STOP GRADIENT) ===
         self.tissue_attention_encoder = TissueAttentionEncoder(
             in_channels=dims[0],
             dims=dims,
-        )
-        self.cross_attention = LocalGlobalAttention(
-            d_model=dims[-1], n_heads=8, window_size=2
         )
 
         # === NUCLEI STREAM ===
@@ -102,54 +93,46 @@ class DualUNet(nn.Module):
             depths=depths,
             drop_path_rate=config.drop_path_rate,
         )
-        self.nuclei_decoder = TissueDecoder(
+        self.transformer = EncoderTransformerStack(
+            num_blocks=config.num_transformer_blocks,
+            d_model=dims[-1],
+            n_heads=config.n_heads,
+            d_ff=config.d_ff,
+            d_expert=config.d_expert,
+            num_experts=config.num_experts,
+            top_k=config.moe_top_k,
+            window_size=config.window_size,
+        )
+        self.nuclei_decoder, self.nuclei_head = build_decoder(
             encoder_dims=dims,
             encoder_depths=depths,
             num_classes=config.num_classes,
         )
 
-    def _encode(self, x, stem, down, stages):
-        """Run forward_encoder logic: returns (bottleneck, skip_connections)."""
-        all_skips: List[List[torch.Tensor]] = []
-
-        x = stem(x)
-        stage_skips: List[torch.Tensor] = []
-        for layer in stages[0]:
-            x = layer(x)
-            stage_skips.append(x)
-        all_skips.append(stage_skips)
-
-        for i in range(3):
-            x = down[i](x)
-            stage_skips = []
-            for layer in stages[i + 1]:
-                x = layer(x)
-                stage_skips.append(x)
-            all_skips.append(stage_skips)
-
-        return x, all_skips[:-1]
-
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # === TISSUE STREAM ===
-        tissue_bottleneck, tissue_skips = self._encode(
-            x, self.tissue_stem, self.tissue_down, self.tissue_stages
+        t_bottleneck, t_skips = forward_encoder(
+            x, self.tissue_stem, self.tissue_down, self.tissue_stages,
         )
-        tissue_mask, tissue_features = self.tissue_decoder(tissue_bottleneck, tissue_skips)
+        t_mask, t_full_res_feat = self.tissue_decoder(t_bottleneck, t_skips)
 
-        # === TISSUE → NUCLEI (STOP GRADIENT) ===
-        tissue_attn = self.tissue_attention_encoder(tissue_features.detach())
+        # === TISSUE → NUCLEI CONTEXT (STOP GRADIENT) ===
+        t_context = self.tissue_attention_encoder(t_full_res_feat.detach())
+        B, C, H, W = t_context.shape
+        context_seq = t_context.flatten(2).transpose(1, 2)
 
         # === NUCLEI STREAM ===
-        nuclei_bottleneck, nuclei_skips = self._encode(
-            x, self.nuclei_stem, self.nuclei_down, self.nuclei_stages
+        n_bottleneck, n_skips = forward_encoder(
+            x, self.nuclei_stem, self.nuclei_down, self.nuclei_stages,
         )
 
-        B, C, H, W = nuclei_bottleneck.shape
-        nq = nuclei_bottleneck.flatten(2).transpose(1, 2)
-        nt = tissue_attn.flatten(2).transpose(1, 2)
-        fused = self.cross_attention(nq, context=nt)
-        fused = fused.transpose(1, 2).reshape(B, C, H, W)
+        n_seq = n_bottleneck.flatten(2).transpose(1, 2)
+        n_seq, moe_loss = self.transformer(n_seq, context=context_seq)
 
-        nuclei_mask, _ = self.nuclei_decoder(fused, nuclei_skips)
+        _, L, D = n_seq.shape
+        Hf = Wf = int(L ** 0.5)
+        n_transformed = n_seq.transpose(1, 2).reshape(B, D, Hf, Wf)
 
-        return tissue_mask, nuclei_mask
+        n_mask = forward_decoder(n_transformed, n_skips, self.nuclei_decoder, self.nuclei_head)
+
+        return t_mask, n_mask, moe_loss
