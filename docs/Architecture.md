@@ -160,7 +160,7 @@ flowchart LR
 
 **File:** `src/prometheus/models/unet_dual.py`
 
-A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded and fused into the nuclei bottleneck via **LocalGlobalAttention** cross-attention.
+A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded via `TissueAttentionEncoder` and fused into the nuclei bottleneck through an **EncoderTransformerStack** (6× blocks, each with Self-Attn → FFN → Cross-Attn → Sparse MoE).
 
 ```mermaid
 flowchart TB
@@ -184,9 +184,9 @@ flowchart TB
     subgraph Nuclei["Nuclei Stream"]
         direction TB
         NE["Encoder<br/>Stem + 4 ConvNeXt Stages"]
-        CA["LocalGlobalAttention<br/>d_model=768, n_heads=8<br/>window_size=4<br/>Q: nuclei, K/V: tissue"]
-        ND["TissueDecoder<br/>(nuclei decoder)<br/>3 Decoder Levels"]
-        OH2["Mask Head<br/>ConvTranspose2d(4x4) + Conv2d(1x1)"]
+        TX["EncoderTransformerStack<br/>6× blocks<br/>Self-Attn → FFN → Cross-Attn → MoE"]
+        ND["Decoder<br/>3 Decoder Levels"]
+        OH2["Output Head<br/>ConvTranspose2d(4x4) + Conv2d(1x1)"]
     end
 
     I --> TE
@@ -198,12 +198,12 @@ flowchart TB
 
     FH --> SG
     SG --> TAE
-    TAE --> CA
+    TAE -->|"context"| TX
 
     I --> NE
-    NE -->|"bottleneck (B, 768, H/32, W/32)"| CA
+    NE -->|"bottleneck (B, 768, H/32, W/32)"| TX
     NE -->|"skips"| ND
-    CA --> ND
+    TX --> ND
     ND --> OH2
     OH2 --> NM["Nuclei Mask"]
 
@@ -213,41 +213,24 @@ flowchart TB
     style Nuclei fill:#fce4ec
 ```
 
-### Cross-Attention Fusion Detail
+### EncoderTransformerBlock Detail
+
+Each of the 6 transformer blocks in the stack follows this structure:
 
 ```mermaid
 flowchart LR
-    subgraph Fusion["Cross-Attention (in DualUNet)"]
-        NB["Nuclei Bottleneck<br/>(B, 768, H/32, W/32)"] --> FL["Flatten + Transpose<br/>(B, L, 768)"]
-        TB["Tissue Context<br/>(B, 768, H/32, W/32)"] --> FL2["Flatten + Transpose<br/>(B, L, 768)"]
+    subgraph Block["EncoderTransformerBlock(d_model, n_heads, d_ff)"]
+        IN["x: (B, L, D)"] --> SA["Self-Attention<br/>LocalGlobalAttention<br/>Q=K=V=x"]
+        SA --> SA_RES["+ x<br/>(Pre-LN residual)"]
+        SA_RES --> FFN["Dense FFN<br/>Linear(D → 4D) → GELU → Linear(4D → D)"]
+        FFN --> FFN_RES["+ input<br/>(Pre-LN residual)"]
+        FFN_RES --> CA["Cross-Attention<br/>LocalGlobalAttention<br/>Q=x, K=V=context"]
+        CA --> CA_RES["+ input<br/>(Pre-LN residual)"]
+        CA_RES --> MOE["Sparse MoE<br/>DownProj → top-k gate → experts → UpProj"]
+        MOE --> MOE_RES["+ input<br/>(Pre-LN residual)"]
+        MOE_RES --> OUT["output: (B, L, D)"]
 
-        FL --> Q["Q Projection"]
-        FL2 --> K["K Projection"]
-        FL2 --> V["V Projection"]
-
-        Q --> SPLIT["Split Heads<br/>(local: 4, global: 4)"]
-        K --> SPLIT2["Split Heads<br/>(local: 4, global: 4)"]
-        V --> SPLIT3["Split Heads<br/>(local: 4, global: 4)"]
-
-        subgraph Global["Global Attention"]
-            GLO["Softmax(Q_glob @ K_glob^T / √d) @ V_glob"]
-        end
-
-        subgraph Local["Windowed Attention"]
-            LO["Window reshape (W=2)<br/>Softmax(Q_loc @ K_loc^T / √d) @ V_loc"]
-        end
-
-        SPLIT --> Global
-        SPLIT --> Local
-        SPLIT2 --> Global
-        SPLIT2 --> Local
-        SPLIT3 --> Global
-        SPLIT3 --> Local
-
-        Global --> CAT["Concat Heads"]
-        Local --> CAT
-        CAT --> O["Output Projection"]
-        O --> RESHAPE["Reshape → (B, 768, H/32, W/32)"]
+        CTX["context: (B, S, D)<br/>(from TissueAttentionEncoder)"] -.-> CA
     end
 ```
 
