@@ -3,25 +3,32 @@
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 
-from prometheus import UNetTissue
-from prometheus.config import ModelConfig
+from prometheus import CombinedLoss, UNetTissue
+from prometheus.config import ModelConfig, TrainingConfig
 
 
 def main() -> None:
-    cfg = ModelConfig(in_chans=3, num_classes=1)
-    model = UNetTissue(config=cfg)
+    model_cfg = ModelConfig(in_chans=3, num_classes=1)
+    train_cfg = TrainingConfig(batch_size=4, epochs=10)
+
+    model = UNetTissue(config=model_cfg)
     model.train()
 
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
-    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=train_cfg.lr,
+        weight_decay=train_cfg.weight_decay,
+        betas=train_cfg.betas,
+        eps=train_cfg.eps,
+    )
+    criterion = CombinedLoss(bce_weight=1.0, dice_weight=1.0)
 
-    dummy_input = torch.randn(4, 3, 256, 256)
-    dummy_target = torch.randn(4, 1, 256, 256)
+    dummy_input = torch.randn(train_cfg.batch_size, 3, 256, 256)
+    dummy_target = torch.randn(train_cfg.batch_size, 1, 256, 256)
 
-    for step in range(10):
+    for step in range(train_cfg.epochs):
         optimizer.zero_grad()
         output = model(dummy_input)
         loss = criterion(output, dummy_target)
