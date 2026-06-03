@@ -60,23 +60,6 @@ classDiagram
         +forward(x, context?) Tensor
     }
 
-    class TopKPagedMoE {
-        +num_experts: int (8)
-        +top_k: int (2)
-        +experts: ModuleList[Expert]
-        +gate: Linear
-        +noise_linear: Linear
-        +forward(x) Tensor
-    }
-
-    class SparseMoELocalGlobalEncoderLayer {
-        +attn: LocalGlobalAttention
-        +moe: TopKPagedMoE
-        +norm1, norm2: LayerNorm
-        +dropout: Dropout
-        +forward(x) Tensor
-    }
-
     class MinkowskiConvNeXtBlock {
         +dwconv: MinkowskiConvolution(3x3, groups=dim)
         +norm: MinkowskiLayerNorm
@@ -88,8 +71,6 @@ classDiagram
         +forward(x) SparseTensor
     }
 
-    LocalGlobalAttention --> SparseMoELocalGlobalEncoderLayer
-    TopKPagedMoE --> SparseMoELocalGlobalEncoderLayer
 ```
 
 ## UNetTissue
@@ -416,88 +397,6 @@ flowchart TB
     end
 ```
 
-## Mixture of Experts (MoE)
-
-The codebase contains **two independent MoE implementations**:
-
-### 1. TopKPagedMoE (`blocks/moe.py`)
-
-Used in `SparseMoELocalGlobalEncoderLayer`. Lightweight top-k gating with learned noise.
-
-```mermaid
-flowchart LR
-    subgraph TopKPagedMoE["TopKPagedMoE(d_model, d_ff, num_experts=8, top_k=2)"]
-        X["x: (B, L, D)"] --> FL["Flatten → (B*L, D)"]
-        FL --> GATE["Gate Linear → logits"]
-        FL --> NOISE["Noise Linear → Softplus"]
-        NOISE --> ADD["+ ε * noise<br/>(training only)"]
-        GATE --> ADD
-        ADD --> SM["Softmax"]
-        SM --> TOPK["Top-k indices + weights"]
-        TOPK --> RENORM["Renormalize weights"]
-        RENORM --> ROUTE["Route to Experts"]
-
-        subgraph Experts["8 Experts (MLP)"]
-            E1["Expert 1<br/>Linear → SiLU → Linear"]
-            E2["Expert 2"]
-            E3["..."]
-            E8["Expert 8"]
-        end
-
-        ROUTE --> E1
-        ROUTE --> E2
-        ROUTE --> E3
-        ROUTE --> E8
-        E1 --> COMB["Weighted Sum → (B, L, D)"]
-        E2 --> COMB
-        E3 --> COMB
-        E8 --> COMB
-    end
-```
-
-### 2. Tensor2Tensor MoE (`layers/mixture_of_experts.py`)
-
-Full capacity-based top-2 gating with auxiliary balancing loss. Supports hierarchical routing.
-
-```mermaid
-flowchart LR
-    subgraph MoE["MoE(dim, num_experts=16)"]
-        X["x: (B, G, D)"] --> G["Top2Gating"]
-        G -->|"dispatch_tensor"| DISP["EinSum Dispatch"]
-        DISP --> EXP["Experts<br/>(parameter tensors, einsum)"]
-        EXP --> COMB["EinSum Combine"]
-        G -->|"combine_tensor"| COMB
-        G -->|"loss"| LOSS["Auxiliary Loss<br/>density_1_proxy × density_1"]
-        COMB --> O["output: (B, G, D)"]
-    end
-
-    subgraph HierarchicalMoE["HierarchicalMoE(dim, num_experts=(4,4))"]
-        HX["x: (B, G, D)"] --> OG["Outer Gate (Top2Gating)"]
-        OG --> IG["Inner Gate (Top2Gating)"]
-        IG --> HEXP["Experts<br/>4×4 = 16 experts"]
-        HEXP --> HCOMB["Combine"]
-        OG --> HCOMB
-        HCOMB --> HO["output"]
-    end
-```
-
-### SparseMoELocalGlobalEncoderLayer
-
-```mermaid
-flowchart LR
-    subgraph TransformerLayer["SparseMoELocalGlobalEncoderLayer<br/>(Pre-LN Transformer)"]
-        X["x"] --> LN1["LayerNorm"]
-        LN1 --> ATT["LocalGlobalAttention"]
-        ATT --> D1["Dropout"]
-        D1 --> ADD1["+ x"]
-        ADD1 --> LN2["LayerNorm"]
-        LN2 --> MOE["TopKPagedMoE"]
-        MOE --> D2["Dropout"]
-        D2 --> ADD2["+ ADD1"]
-        ADD2 --> O["output"]
-    end
-```
-
 ## Normalization Utilities
 
 **File:** `src/prometheus/utils/norm.py`
@@ -519,11 +418,7 @@ src/prometheus/
 │   ├── convnext_block.py         ConvNeXtBlock
 │   ├── decoder_block.py          DecoderBlock
 │   ├── attention.py              LocalGlobalAttention, CrossAttention
-│   ├── transformer_block.py      SparseMoELocalGlobalEncoderLayer
-│   ├── moe.py                    Expert, TopKPagedMoE
 │   └── minkowski_block.py        MinkowskiConvNeXtBlock
-├── layers/
-│   └── mixture_of_experts.py     Experts, Top2Gating, MoE, HierarchicalMoE
 ├── models/
 │   ├── _base_unet.py             build_encoder, forward_encoder,
 │   │                             build_decoder, forward_decoder
@@ -540,7 +435,6 @@ src/prometheus/
 
 1. **ConvNeXt-v2 backbone:** Depthwise 7×7 conv + LayerNorm + GELU + GRN + DropPath — no BatchNorm, no ReLU.
 2. **Local-Global Attention:** 50/50 head split between windowed (Swin-style) and full-sequence attention.
-3. **Dual MoE:** Lightweight `TopKPagedMoE` (per-expert loop dispatch) and full `MoE` (einsum dispatch with capacity-based routing and auxiliary balancing loss).
-4. **MinkowskiEngine sparse conv:** `UNetNuclei` uses sparse 3×3 ConvNeXt blocks on masked tissue features for efficiency.
-5. **Stop-gradient isolation:** `DualUNet` uses `.detach()` to prevent nuclei gradients from flowing into the tissue decoder, allowing independent training of each stream.
-6. **Stochastic depth scheduling:** Drop path rates linearly increase from 0 to `drop_path_rate` across all blocks following ConvNeXt convention.
+3. **MinkowskiEngine sparse conv:** `UNetNuclei` uses sparse 3×3 ConvNeXt blocks on masked tissue features for efficiency.
+4. **Stop-gradient isolation:** `DualUNet` uses `.detach()` to prevent nuclei gradients from flowing into the tissue decoder, allowing independent training of each stream.
+5. **Stochastic depth scheduling:** Drop path rates linearly increase from 0 to `drop_path_rate` across all blocks following ConvNeXt convention.

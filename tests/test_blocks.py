@@ -4,8 +4,6 @@ from prometheus.blocks import (
     ConvNeXtBlock,
     DecoderBlock,
     LocalGlobalAttention,
-    TopKPagedMoE,
-    SparseMoELocalGlobalEncoderLayer,
 )
 
 
@@ -45,22 +43,6 @@ def test_local_global_attention() -> None:
     x = torch.randn(2, 196, 256)
     out = attn(x)
     assert out.shape == (2, 196, 256)
-
-
-def test_topk_moe() -> None:
-    moe = TopKPagedMoE(d_model=256, d_ff=1024, num_experts=8, top_k=2)
-    x = torch.randn(2, 49, 256)
-    out = moe(x)
-    assert out.shape == (2, 49, 256)
-
-
-def test_sparse_moe_transformer_layer() -> None:
-    layer = SparseMoELocalGlobalEncoderLayer(
-        d_model=256, n_heads=8, d_ff=1024, num_experts=8, window_size=16
-    )
-    x = torch.randn(2, 256, 256)
-    out = layer(x)
-    assert out.shape == (2, 256, 256)
 
 
 def test_decoder_block_interpolation() -> None:

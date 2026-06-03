@@ -1,6 +1,6 @@
 # Prometheus
 
-Medical image segmentation with U-Net + Transformer + Mixture of Experts.
+Medical image segmentation with ConvNeXt U-Net.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ The project implements two segmentation models built on a **ConvNeXt-based U-Net
 - Extended U-Net for nuclei segmentation with tissue mask guidance
 - Dense encoder + MinkowskiEngine sparse encoder for tissue mask features
 - Transformer-style bottleneck encoder
-- Auxiliary modules: Local-Global Attention, Sparse Mixture of Experts
+- Auxiliary modules: Local-Global Attention
 
 ### Supporting Components
 
@@ -25,9 +25,7 @@ The project implements two segmentation models built on a **ConvNeXt-based U-Net
 | `ConvNeXtBlock` | Pre-norm ConvNeXt block: DWConv → LN → Linear(×4) → GELU → GRN → Linear(÷4) → residual |
 | `DecoderBlock` | Upsample + skip concat + ConvNeXtBlock |
 | `LocalGlobalAttention` | Multi-head attention split into local (windowed) and global (full) heads |
-| `TopKPagedMoE` | Lightweight sparse MoE with noisy top-k gating |
-| `SparseMoELocalGlobalEncoderLayer` | Complete pre-LN Transformer encoder with LocalGlobalAttention + MoE |
-| `Top2Gating` / `MoE` / `HierarchicalMoE` | Full tensor2tensor MoE transcription with capacity-based routing |
+
 
 ## Installation
 
@@ -66,16 +64,13 @@ out = model(x, mask)
 ### Building custom models with blocks
 
 ```python
-from prometheus.blocks import ConvNeXtBlock, DecoderBlock, LocalGlobalAttention, TopKPagedMoE
+from prometheus.blocks import ConvNeXtBlock, DecoderBlock, LocalGlobalAttention
 
 # ConvNeXt feature extractor
 block = ConvNeXtBlock(dim=128, drop_path=0.1)
 
 # Local-Global attention
 attn = LocalGlobalAttention(d_model=512, n_heads=8, window_size=16)
-
-# Sparse MoE
-moe = TopKPagedMoE(d_model=512, d_ff=2048, num_experts=8, top_k=2)
 ```
 
 ## Development
@@ -101,15 +96,12 @@ src/prometheus/
 │   ├── convnext_block.py    # ConvNeXtBlock
 │   ├── decoder_block.py     # DecoderBlock
 │   ├── attention.py         # LocalGlobalAttention
-│   ├── moe.py               # TopKPagedMoE
-│   ├── minkowski_block.py   # MinkowskiConvNeXtBlock (requires ME)
-│   └── transformer_block.py # SparseMoELocalGlobalEncoderLayer
+│   └── minkowski_block.py   # MinkowskiConvNeXtBlock (requires ME)
 ├── models/                  # Complete models
 │   ├── _base_unet.py        # Shared encoder/decoder factories
 │   ├── unet_tissue.py       # UNetTissue
-│   └── unet_nuclei.py       # UNetNuclei (requires ME)
-├── layers/                  # Specialized layers
-│   └── mixture_of_experts.py # Top2Gating, MoE, HierarchicalMoE
+│   ├── unet_nuclei.py       # UNetNuclei (requires ME)
+│   └── unet_dual.py         # DualUNet
 └── utils/                   # Utilities
     ├── norm.py              # LayerNorm, GRN
     └── minkowski_utils.py   # MinkowskiGRN, MinkowskiDropPath, MinkowskiLayerNorm
