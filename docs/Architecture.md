@@ -327,20 +327,26 @@ flowchart LR
 
 ```
 src/prometheus/
-├── config.py                     ModelConfig dataclass
+├── __init__.py              # Package init, exports UNetTissue, DualUNet, all losses
+├── config.py                # ModelConfig, TrainingConfig dataclasses
 ├── blocks/
-│   ├── attention.py              LocalGlobalAttention
-│   ├── convnext_block.py         ConvNeXtBlock
-│   ├── decoder_block.py          DecoderBlock
-│   ├── moe.py                    Expert, SparseMoE
-│   └── transformer_block.py      EncoderTransformerBlock, EncoderTransformerStack
+│   ├── __init__.py
+│   ├── attention.py         # LocalGlobalAttention
+│   ├── convnext_block.py    # ConvNeXtBlock
+│   ├── decoder_block.py     # DecoderBlock
+│   ├── moe.py               # Expert, SparseMoE
+│   └── transformer_block.py # EncoderTransformerBlock, EncoderTransformerStack
 ├── models/
-│   ├── _base_unet.py             build_encoder, forward_encoder,
-│   │                             build_decoder, forward_decoder
-│   ├── unet_tissue.py            UNetTissue
-│   └── unet_dual.py              DualUNet
+│   ├── __init__.py
+│   ├── _base_unet.py        # build_encoder, forward_encoder, build_decoder, forward_decoder
+│   ├── unet_tissue.py       # UNetTissue
+│   └── unet_dual.py         # DualUNet
+├── losses/
+│   ├── __init__.py
+│   └── segmentation.py      # BCEWithLogitsLoss, DiceLoss, FocalLoss, CombinedLoss, MultiClassDiceLoss, TverskyLoss
 └── utils/
-    └── norm.py                   LayerNorm, GRN
+    ├── __init__.py
+    └── norm.py              # LayerNorm, GRN
 ```
 
 ## Design Highlights
