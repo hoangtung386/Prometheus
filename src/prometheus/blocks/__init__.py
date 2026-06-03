@@ -1,12 +1,15 @@
+from .attention import LocalGlobalAttention
 from .convnext_block import ConvNeXtBlock
 from .decoder_block import DecoderBlock
-from .attention import CrossAttention, LocalGlobalAttention
-from .minkowski_block import MinkowskiConvNeXtBlock
+from .moe import Expert, SparseMoE
+from .transformer_block import EncoderTransformerBlock, EncoderTransformerStack
 
 __all__ = [
     "ConvNeXtBlock",
     "DecoderBlock",
-    "CrossAttention",
     "LocalGlobalAttention",
-    "MinkowskiConvNeXtBlock",
+    "Expert",
+    "SparseMoE",
+    "EncoderTransformerBlock",
+    "EncoderTransformerStack",
 ]
