@@ -11,6 +11,15 @@ class ModelConfig:
     drop_path_rate: float = 0.1
     D: int = 2
 
+    n_heads: int = 8
+    d_ff: int = 3072
+    d_expert: int = 256
+    window_size: int = 4
+    num_transformer_blocks: int = 6
+    num_experts: int = 512
+    moe_top_k: int = 8
+    moe_capacity_factor: float = 1.25
+
 
 DEFAULT_CONFIG = ModelConfig()
 
