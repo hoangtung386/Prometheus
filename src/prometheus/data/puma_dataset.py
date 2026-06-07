@@ -157,7 +157,6 @@ class PUMADataset(Dataset):
     def _load_image(self, idx: int) -> np.ndarray:
         path = self.image_paths[idx]
 
-        # tifffile handles TIFFs with various compression
         import tifffile
         img = tifffile.imread(str(path))
 
@@ -224,16 +223,22 @@ class PUMADataset(Dataset):
 
         return image, tissue_mask, nuclei_mask
 
-    def _normalize(self, image: np.ndarray) -> np.ndarray:
-        mean = np.mean(image, axis=(1, 2), keepdims=True)
-        std = np.std(image, axis=(1, 2), keepdims=True)
-        std = np.clip(std, 1e-8, None)
-        image = (image - mean) / std
+    def _apply_transforms(
+        self, image: np.ndarray, tissue_mask: np.ndarray, nuclei_mask: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self.transforms is None:
+            mean = np.mean(image, axis=(1, 2), keepdims=True)
+            std = np.std(image, axis=(1, 2), keepdims=True)
+            std = np.clip(std, 1e-8, None)
+            image = (image - mean) / std
+            return image, tissue_mask, nuclei_mask
 
-        if self.transforms is not None:
-            image = self.transforms(image)
-
-        return image
+        masks = {"tissue": tissue_mask, "nuclei": nuclei_mask}
+        result = self.transforms(image=image, masks=masks)
+        image = result["image"]
+        tissue_mask = result["masks"]["tissue"]
+        nuclei_mask = result["masks"]["nuclei"]
+        return image, tissue_mask, nuclei_mask
 
     @staticmethod
     def collate_fn(
@@ -252,7 +257,7 @@ class PUMADataset(Dataset):
         nuclei_mask = self._load_mask(idx, "nuclei")
 
         image, tissue_mask, nuclei_mask = self._augment(image, tissue_mask, nuclei_mask)
-        image = self._normalize(image)
+        image, tissue_mask, nuclei_mask = self._apply_transforms(image, tissue_mask, nuclei_mask)
 
         targets = {
             "tissue": torch.from_numpy(tissue_mask),
@@ -268,25 +273,37 @@ def create_puma_dataloaders(
     num_workers: int = 4,
     val_split: float = 0.1,
     seed: int = 42,
+    train_transforms: Optional[Callable] = None,
+    val_transforms: Optional[Callable] = None,
 ) -> tuple[DataLoader, DataLoader]:
-    full_dataset = PUMADataset(root=root, image_size=image_size)
+    train_ds = PUMADataset(
+        root=root, image_size=image_size, augment=True,
+        transforms=train_transforms,
+    )
+    val_ds = PUMADataset(
+        root=root, image_size=image_size, augment=False,
+        transforms=val_transforms,
+    )
 
-    n = len(full_dataset)
+    n = len(train_ds)
     n_val = max(1, int(n * val_split))
     n_train = n - n_val
 
     gen = torch.Generator().manual_seed(seed)
-    train_ds, val_ds = torch.utils.data.random_split(
-        full_dataset, [n_train, n_val], generator=gen,
+    train_indices, val_indices = torch.utils.data.random_split(
+        range(n), [n_train, n_val], generator=gen,
     )
 
+    train_subset = torch.utils.data.Subset(train_ds, train_indices.indices)
+    val_subset = torch.utils.data.Subset(val_ds, val_indices.indices)
+
     train_loader = DataLoader(
-        train_ds, batch_size=batch_size, shuffle=True,
+        train_subset, batch_size=batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True,
         collate_fn=PUMADataset.collate_fn,
     )
     val_loader = DataLoader(
-        val_ds, batch_size=batch_size, shuffle=False,
+        val_subset, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
         collate_fn=PUMADataset.collate_fn,
     )
