@@ -22,8 +22,8 @@ class RandomHorizontalFlip:
 
     def __call__(self, image: np.ndarray, masks: dict[str, np.ndarray], **kwargs) -> dict:
         if random.random() < self.p:
-            image = np.fliplr(image).copy()
-            masks = {k: np.fliplr(m).copy() for k, m in masks.items()}
+            image = np.flip(image, axis=2).copy()
+            masks = {k: np.flip(m, axis=2).copy() for k, m in masks.items()}
         return {"image": image, "masks": masks, **kwargs}
 
 
@@ -33,8 +33,8 @@ class RandomVerticalFlip:
 
     def __call__(self, image: np.ndarray, masks: dict[str, np.ndarray], **kwargs) -> dict:
         if random.random() < self.p:
-            image = np.flipud(image).copy()
-            masks = {k: np.flipud(m).copy() for k, m in masks.items()}
+            image = np.flip(image, axis=1).copy()
+            masks = {k: np.flip(m, axis=1).copy() for k, m in masks.items()}
         return {"image": image, "masks": masks, **kwargs}
 
 

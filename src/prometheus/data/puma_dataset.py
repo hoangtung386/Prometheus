@@ -206,14 +206,14 @@ class PUMADataset(Dataset):
             return image, tissue_mask, nuclei_mask
 
         if random.random() > 0.5:
-            image = np.fliplr(image).copy()
-            tissue_mask = np.fliplr(tissue_mask).copy()
-            nuclei_mask = np.fliplr(nuclei_mask).copy()
+            image = np.flip(image, axis=2).copy()
+            tissue_mask = np.flip(tissue_mask, axis=2).copy()
+            nuclei_mask = np.flip(nuclei_mask, axis=2).copy()
 
         if random.random() > 0.5:
-            image = np.flipud(image).copy()
-            tissue_mask = np.flipud(tissue_mask).copy()
-            nuclei_mask = np.flipud(nuclei_mask).copy()
+            image = np.flip(image, axis=1).copy()
+            tissue_mask = np.flip(tissue_mask, axis=1).copy()
+            nuclei_mask = np.flip(nuclei_mask, axis=1).copy()
 
         k = random.choice([0, 1, 2, 3])
         if k > 0:
