@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -29,6 +28,8 @@ def predict_sample(
 
 
 def visualize_sample(dataset, idx: int = 0) -> None:
+    import matplotlib.pyplot as plt
+
     img, targets = dataset[idx]
     tissue_mask = targets["tissue"]
     nuclei_mask = targets["nuclei"]
@@ -56,6 +57,8 @@ def show_prediction(
     model_type: str = "DualUNet",
     device: torch.device = torch.device("cpu"),
 ) -> None:
+    import matplotlib.pyplot as plt
+
     img, targets = dataset[idx]
     pred = predict_sample(model, img, model_type, device)
 

@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
 from ..config import TrainingConfig
 from ..losses import CombinedLoss
@@ -148,7 +147,8 @@ class Trainer:
 
         os.makedirs(config.log_dir, exist_ok=True)
         os.makedirs(config.ckpt_dir, exist_ok=True)
-        self.writer = SummaryWriter(log_dir=config.log_dir)
+        from torch.utils.tensorboard import SummaryWriter
+        self._writer = SummaryWriter(log_dir=config.log_dir)
 
         self.best_dice = 0.0
         self.start_epoch = 0
@@ -165,11 +165,11 @@ class Trainer:
                 self.model, self.val_loader, self.criterion, self.config, self.device,
             )
 
-            self.writer.add_scalar("Loss/train", train_loss, epoch)
-            self.writer.add_scalar("Loss/val", val_loss, epoch)
-            self.writer.add_scalar("Dice/tissue", val_dice_t, epoch)
-            self.writer.add_scalar("Dice/nuclei", val_dice_n, epoch)
-            self.writer.add_scalar("LR", self.optimizer.param_groups[0]["lr"], epoch)
+            self._writer.add_scalar("Loss/train", train_loss, epoch)
+            self._writer.add_scalar("Loss/val", val_loss, epoch)
+            self._writer.add_scalar("Dice/tissue", val_dice_t, epoch)
+            self._writer.add_scalar("Dice/nuclei", val_dice_n, epoch)
+            self._writer.add_scalar("LR", self.optimizer.param_groups[0]["lr"], epoch)
 
             print(
                 f"─── E{epoch:03d}  train={train_loss:.4f}  val={val_loss:.4f}  "
@@ -204,7 +204,7 @@ class Trainer:
                     ),
                 )
 
-        self.writer.close()
+        self._writer.close()
         print(f"\nDone! Best monitor dice: {self.best_dice:.4f}")
         return self.best_dice
 
