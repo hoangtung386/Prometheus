@@ -41,10 +41,10 @@ class RandomVerticalFlip:
 
 class RandomRotate90:
     def __call__(self, image: np.ndarray, masks: dict[str, np.ndarray], **kwargs) -> dict:
-        k = random.choice([0, 1, 2, 3])
-        if k > 0:
-            image = np.rot90(image, k, axes=(1, 2)).copy()
-            masks = {k: np.rot90(m, k, axes=(1, 2)).copy() for k, m in masks.items()}
+        rot_k = random.choice([0, 1, 2, 3])
+        if rot_k > 0:
+            image = np.rot90(image, rot_k, axes=(1, 2)).copy()
+            masks = {k: np.rot90(m, rot_k, axes=(1, 2)).copy() for k, m in masks.items()}
         return {"image": image, "masks": masks, **kwargs}
 
 
