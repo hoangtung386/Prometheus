@@ -26,6 +26,7 @@ DEFAULT_CONFIG = ModelConfig()
 
 @dataclass
 class TrainingConfig:
+    model_type: str = "DualUNet"
     batch_size: int = 4
     epochs: int = 100
     lr: float = 1e-4
@@ -43,6 +44,15 @@ class TrainingConfig:
     log_interval: int = 10
     save_interval: int = 10
     val_interval: int = 1
+
+    image_size: int = 1024
+    num_tissue_classes: int = 6
+    num_nuclei_classes: int = 10
+    data_root: str = ""
+    val_split: float = 0.1
+    log_dir: str = "logs"
+    ckpt_dir: str = "checkpoints"
+    moe_loss_weight: float = 0.01
 
 
 DEFAULT_TRAINING_CONFIG = TrainingConfig()
