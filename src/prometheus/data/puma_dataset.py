@@ -149,6 +149,13 @@ class PUMADataset(Dataset):
         if not self.image_paths:
             self.image_paths = sorted(img_dir.glob("*.[tT][iI][fF]"))
 
+        if not self.image_paths:
+            img_dir = self.root / "01_training_dataset_tif_ROIs"
+            if img_dir.exists():
+                self.image_paths = sorted(img_dir.glob("*.tif"))
+                if not self.image_paths:
+                    self.image_paths = sorted(img_dir.glob("*.[tT][iI][fF]"))
+
         print(f"PUMADataset: {len(self.image_paths)} images in {img_dir}")
 
     def __len__(self) -> int:
@@ -181,6 +188,9 @@ class PUMADataset(Dataset):
             return self._mask_cache[cache_key]
 
         geojson_dir = self.root / f"geojson_{modality}"
+        if not geojson_dir.exists():
+            geojson_dir = self.root / f"01_training_dataset_geojson_{modality}"
+
         geojson_path = geojson_dir / f"{stem}_{modality}.geojson"
 
         if not geojson_path.exists():
