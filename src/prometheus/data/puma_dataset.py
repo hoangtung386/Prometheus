@@ -278,8 +278,8 @@ class PUMADataset(Dataset):
         image, tissue_mask, nuclei_mask = self._apply_transforms(image, tissue_mask, nuclei_mask)
 
         targets = {
-            "tissue": torch.from_numpy(tissue_mask),
-            "nuclei": torch.from_numpy(nuclei_mask),
+            "tissue": torch.from_numpy(tissue_mask).float(),
+            "nuclei": torch.from_numpy(nuclei_mask).float(),
         }
         return torch.from_numpy(image), targets
 
