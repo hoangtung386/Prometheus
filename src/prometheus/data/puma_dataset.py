@@ -90,7 +90,15 @@ def geojson_to_mask(
 
     for feature in data.get("features", []):
         props = feature.get("properties", {})
-        raw_label = props.get(label_key, "background")
+        
+        raw_label = props.get(label_key)
+        if raw_label is None:
+            classification = props.get("classification", {})
+            if isinstance(classification, dict):
+                raw_label = classification.get("name", "background")
+            else:
+                raw_label = "background"
+        
         class_name = _parse_puma_class_name(raw_label)
 
         if class_name not in class_map:
