@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import cv2
+import torch
 
 
 class Compose:
