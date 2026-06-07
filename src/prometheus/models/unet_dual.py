@@ -77,7 +77,7 @@ class DualUNet(nn.Module):
         self.tissue_decoder = TissueDecoder(
             encoder_dims=dims,
             encoder_depths=depths,
-            num_classes=config.num_classes,
+            num_classes=config.num_tissue_classes,
         )
 
         # === TISSUE → NUCLEI BRIDGE (STOP GRADIENT) ===
@@ -106,7 +106,7 @@ class DualUNet(nn.Module):
         self.nuclei_decoder, self.nuclei_head = build_decoder(
             encoder_dims=dims,
             encoder_depths=depths,
-            num_classes=config.num_classes,
+            num_classes=config.num_nuclei_classes,
         )
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

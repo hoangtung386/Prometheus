@@ -6,6 +6,8 @@ from typing import List, Optional
 class ModelConfig:
     in_chans: int = 3
     num_classes: int = 1
+    num_tissue_classes: int = 6
+    num_nuclei_classes: int = 11
     encoder_dims: List[int] = field(default_factory=lambda: [96, 192, 384, 768])
     encoder_depths: List[int] = field(default_factory=lambda: [3, 3, 9, 3])
     drop_path_rate: float = 0.1

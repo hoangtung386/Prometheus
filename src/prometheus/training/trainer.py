@@ -49,7 +49,7 @@ def train_one_epoch(
 
         optimizer.zero_grad(set_to_none=True)
 
-        with torch.cuda.amp.autocast(enabled=config.amp):
+        with torch.amp.autocast('cuda', enabled=config.amp):
             if config.model_type == "UNetTissue":
                 logits = model(images)
                 loss = criterion(logits, t_mask)
