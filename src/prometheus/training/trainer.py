@@ -6,19 +6,35 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from ..config import TrainingConfig
-from ..losses import CombinedLoss
+from ..data.puma_dataset import NUCLEI_CLASSES, TISSUE_CLASSES
+from ..losses import MulticlassCombinedLoss
+from ..metrics import SegmentationEvaluator
 
 
 def dice_score(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
-    pred = pred.argmax(dim=1)
-    pred = nn.functional.one_hot(pred, num_classes=target.shape[1]).permute(0, 3, 1, 2)
-    intersection = (pred * target).sum(dim=(2, 3))
-    cardinality = pred.sum(dim=(2, 3)) + target.sum(dim=(2, 3))
+    num_classes = pred.shape[1]
+    pred_idx = pred.argmax(dim=1)
+    pred_onehot = F.one_hot(pred_idx, num_classes=num_classes).permute(0, 3, 1, 2).float()
+    target_onehot = F.one_hot(target, num_classes=num_classes).permute(0, 3, 1, 2).float()
+    intersection = (pred_onehot * target_onehot).sum(dim=(2, 3))
+    cardinality = pred_onehot.sum(dim=(2, 3)) + target_onehot.sum(dim=(2, 3))
     return ((2 * intersection + eps) / (cardinality + eps)).mean(dim=1)
+
+
+def per_class_dice(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    num_classes = pred.shape[1]
+    pred_idx = pred.argmax(dim=1)
+    pred_onehot = F.one_hot(pred_idx, num_classes=num_classes).permute(0, 3, 1, 2).float()
+    target_onehot = F.one_hot(target, num_classes=num_classes).permute(0, 3, 1, 2).float()
+    intersection = (pred_onehot * target_onehot).sum(dim=(2, 3))
+    cardinality = pred_onehot.sum(dim=(2, 3)) + target_onehot.sum(dim=(2, 3))
+    dice = (2. * intersection + eps) / (cardinality + eps)
+    return dice  # (B, C)
 
 
 def warmup_cosine_lr(epoch: int, warmup_epochs: int, total_epochs: int) -> float:
@@ -84,7 +100,14 @@ def validate(
     criterion: nn.Module,
     config: TrainingConfig,
     device: torch.device,
+    eval_t: Optional[SegmentationEvaluator] = None,
+    eval_n: Optional[SegmentationEvaluator] = None,
 ) -> tuple[float, float, float]:
+    """Run evaluation loop.
+
+    Returns (avg_loss, avg_dice_tissue, avg_dice_nuclei).
+    When eval_t / eval_n are provided they accumulate per-class statistics.
+    """
     model.eval()
     total_loss = 0.0
     dice_tissue, dice_nuclei = [], []
@@ -98,11 +121,17 @@ def validate(
             logits = model(images)
             loss = criterion(logits, t_mask)
             dice_tissue.append(dice_score(logits, t_mask))
+            if eval_t is not None:
+                eval_t.update(logits, t_mask)
         else:
             pred_t, pred_n, _ = model(images)
             loss = criterion(pred_t, t_mask) + criterion(pred_n, n_mask)
             dice_tissue.append(dice_score(pred_t, t_mask))
             dice_nuclei.append(dice_score(pred_n, n_mask))
+            if eval_t is not None:
+                eval_t.update(pred_t, t_mask)
+            if eval_n is not None:
+                eval_n.update(pred_n, n_mask)
 
         total_loss += loss.item()
 
@@ -117,13 +146,14 @@ class Trainer:
         self,
         model: nn.Module,
         train_loader: DataLoader,
-        val_loader: DataLoader,
         config: TrainingConfig,
         device: Optional[torch.device] = None,
+        test_loader: Optional[DataLoader] = None,
+        val_loader: Optional[DataLoader] = None,
     ) -> None:
         self.model = model
         self.train_loader = train_loader
-        self.val_loader = val_loader
+        self.test_loader = test_loader or val_loader
         self.config = config
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -142,13 +172,17 @@ class Trainer:
             lr_lambda=lambda epoch: warmup_cosine_lr(epoch, config.warmup_epochs, config.epochs),
         )
 
-        self.scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
-        self.criterion = CombinedLoss(bce_weight=1.0, dice_weight=1.0)
+        self.scaler = torch.amp.GradScaler('cuda', enabled=config.amp)
+        self.criterion = MulticlassCombinedLoss(ce_weight=1.0, dice_weight=1.0)
 
         os.makedirs(config.log_dir, exist_ok=True)
         os.makedirs(config.ckpt_dir, exist_ok=True)
-        from torch.utils.tensorboard import SummaryWriter
-        self._writer = SummaryWriter(log_dir=config.log_dir)
+        try:
+            from torch.utils.tensorboard import SummaryWriter
+            self._writer = SummaryWriter(log_dir=config.log_dir)
+        except ModuleNotFoundError:
+            print("Warning: tensorboard not installed, metrics will not be logged")
+            self._writer = None
 
         self.best_dice = 0.0
         self.start_epoch = 0
@@ -161,23 +195,39 @@ class Trainer:
             )
             self.scheduler.step()
 
-            val_loss, val_dice_t, val_dice_n = validate(
-                self.model, self.val_loader, self.criterion, self.config, self.device,
+            eval_t = SegmentationEvaluator(
+                len(TISSUE_CLASSES), TISSUE_CLASSES,
+            )
+            eval_n = SegmentationEvaluator(
+                len(NUCLEI_CLASSES), NUCLEI_CLASSES,
+            ) if self.config.model_type != "UNetTissue" else None
+
+            test_loss, test_dice_t, test_dice_n = validate(
+                self.model, self.test_loader, self.criterion, self.config, self.device,
+                eval_t=eval_t, eval_n=eval_n,
             )
 
-            self._writer.add_scalar("Loss/train", train_loss, epoch)
-            self._writer.add_scalar("Loss/val", val_loss, epoch)
-            self._writer.add_scalar("Dice/tissue", val_dice_t, epoch)
-            self._writer.add_scalar("Dice/nuclei", val_dice_n, epoch)
-            self._writer.add_scalar("LR", self.optimizer.param_groups[0]["lr"], epoch)
+            if self._writer is not None:
+                self._writer.add_scalar("Loss/train", train_loss, epoch)
+                self._writer.add_scalar("Loss/test", test_loss, epoch)
+                self._writer.add_scalar("Dice/tissue", test_dice_t, epoch)
+                self._writer.add_scalar("Dice/nuclei", test_dice_n, epoch)
+                self._writer.add_scalar("LR", self.optimizer.param_groups[0]["lr"], epoch)
+                for name, val in eval_t.log_dict("tissue").items():
+                    self._writer.add_scalar(name, val, epoch)
+                if eval_n is not None:
+                    for name, val in eval_n.log_dict("nuclei").items():
+                        self._writer.add_scalar(name, val, epoch)
 
-            print(
-                f"─── E{epoch:03d}  train={train_loss:.4f}  val={val_loss:.4f}  "
-                f"dice_t={val_dice_t:.4f}  dice_n={val_dice_n:.4f}  "
-                f"lr={self.optimizer.param_groups[0]['lr']:.2e}"
-            )
+            print(f"\n{'='*70}")
+            print(f"  Epoch {epoch:03d}  |  Train loss: {train_loss:.4f}  |  Test loss: {test_loss:.4f}  |  LR: {self.optimizer.param_groups[0]['lr']:.2e}")
+            print(f"  Mean Dice — tissue: {test_dice_t:.4f}  nuclei: {test_dice_n:.4f}")
+            print(eval_t.summary("Tissue"))
+            if eval_n is not None:
+                print(eval_n.summary("Nuclei"))
+            print(f"{'='*70}\n")
 
-            monitor = val_dice_t + val_dice_n if val_dice_n > 0 else val_dice_t
+            monitor = test_dice_t + test_dice_n if test_dice_n > 0 else test_dice_t
             if monitor > self.best_dice:
                 self.best_dice = monitor
                 ckpt = {
@@ -193,7 +243,7 @@ class Trainer:
                     ckpt,
                     os.path.join(self.config.ckpt_dir, f"{self.config.model_type}_best.pth"),
                 )
-                print(f"  → Saved best (dice_t={val_dice_t:.4f}, dice_n={val_dice_n:.4f})")
+                print(f"  + Saved best (dice_t={test_dice_t:.4f}, dice_n={test_dice_n:.4f})")
 
             if (epoch + 1) % self.config.save_interval == 0:
                 torch.save(
@@ -204,7 +254,8 @@ class Trainer:
                     ),
                 )
 
-        self._writer.close()
+        if self._writer is not None:
+            self._writer.close()
         print(f"\nDone! Best monitor dice: {self.best_dice:.4f}")
         return self.best_dice
 
