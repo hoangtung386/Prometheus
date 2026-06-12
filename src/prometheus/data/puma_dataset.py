@@ -341,7 +341,7 @@ def create_puma_dataloaders(
         collate_fn=PUMADataset.collate_fn,
     )
     test_loader = DataLoader(
-        test_subset, batch_size=batch_size, shuffle=True,
+        test_subset, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
         collate_fn=PUMADataset.collate_fn,
     )
