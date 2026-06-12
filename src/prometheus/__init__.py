@@ -13,7 +13,14 @@ from .metrics import SegmentationEvaluator
 from .models.unet_dual import DualUNet
 from .models.unet_tissue import UNet as UNetTissue
 
-_TRAINING_NAMES = {"Trainer", "dice_score", "train_one_epoch", "validate", "warmup_cosine_lr"}
+_TRAINING_NAMES = {
+    "Trainer",
+    "compute_class_weights",
+    "dice_score",
+    "train_one_epoch",
+    "validate",
+    "warmup_cosine_lr",
+}
 _VIS_NAMES = {"predict_sample", "show_prediction", "visualize_sample"}
 
 
@@ -21,6 +28,7 @@ def __getattr__(name):
     if name in _TRAINING_NAMES:
         from .training import (
             Trainer,
+            compute_class_weights,
             dice_score,
             train_one_epoch,
             validate,
@@ -45,6 +53,7 @@ __all__ = [
     "MulticlassCombinedLoss",
     "TverskyLoss",
     "Trainer",
+    "compute_class_weights",
     "dice_score",
     "train_one_epoch",
     "validate",
