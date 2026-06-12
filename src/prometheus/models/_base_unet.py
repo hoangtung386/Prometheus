@@ -75,6 +75,14 @@ def build_decoder(
     num_classes: int = 1,
     block_cls: type[nn.Module] = DecoderBlock,
 ) -> tuple[nn.ModuleList, nn.Module]:
+    if len(encoder_dims) != len(encoder_depths):
+        raise ValueError(
+            f"encoder_dims and encoder_depths must have the same length, got "
+            f"{len(encoder_dims)} and {len(encoder_depths)}"
+        )
+    if len(encoder_dims) < 4:
+        raise ValueError("decoder expects at least 4 encoder stages")
+
     rev_dims = encoder_dims[::-1]
     dec_depths = list(reversed(encoder_depths[:-1]))
 
@@ -112,6 +120,11 @@ def forward_decoder(
 ) -> torch.Tensor:
     for level in range(3):
         stage_skips = skips[2 - level]
+        if len(stage_skips) != len(levels[level]):
+            raise ValueError(
+                f"Decoder level {level} expected {len(levels[level])} skip tensors, "
+                f"got {len(stage_skips)}"
+            )
         for j, layer in enumerate(levels[level]):
             x = layer(x, stage_skips[j])
     x = output_head(x)
