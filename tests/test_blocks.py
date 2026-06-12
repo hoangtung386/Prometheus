@@ -1,4 +1,5 @@
 import torch
+import pytest
 
 from prometheus.blocks import (
     ConvNeXtBlock,
@@ -7,6 +8,7 @@ from prometheus.blocks import (
     EncoderTransformerStack,
     LocalGlobalAttention,
 )
+from prometheus.models._base_unet import forward_decoder
 
 
 def test_convnext_block() -> None:
@@ -53,6 +55,23 @@ def test_decoder_block_interpolation() -> None:
     skip = torch.randn(2, 64, 28, 28)
     out = block(x, skip)
     assert out.shape == (2, 64, 28, 28)
+
+
+def test_forward_decoder_rejects_skip_depth_mismatch() -> None:
+    levels = torch.nn.ModuleList([
+        torch.nn.ModuleList([DecoderBlock(dim=64, has_upsample=True, in_dim=128)]),
+        torch.nn.ModuleList([DecoderBlock(dim=32, has_upsample=True, in_dim=64)]),
+        torch.nn.ModuleList([DecoderBlock(dim=16, has_upsample=True, in_dim=32)]),
+    ])
+    output_head = torch.nn.Identity()
+    x = torch.randn(1, 128, 8, 8)
+    skips = [
+        [torch.randn(1, 16, 64, 64)],
+        [torch.randn(1, 32, 32, 32)],
+        [torch.randn(1, 64, 16, 16), torch.randn(1, 64, 16, 16)],
+    ]
+    with pytest.raises(ValueError, match="expected 1 skip tensors"):
+        forward_decoder(x, skips, levels, output_head)
 
 
 def test_encoder_transformer_block_self_attn_only() -> None:
