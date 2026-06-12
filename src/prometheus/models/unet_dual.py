@@ -20,7 +20,7 @@ class TissueAttentionEncoder(nn.Module):
     def __init__(self, in_channels: int, dims: List[int]) -> None:
         super().__init__()
         self.stem = nn.Sequential(
-            nn.Conv2d(in_channels, dims[0], kernel_size=4, stride=4),
+            nn.Conv2d(in_channels, dims[0], kernel_size=2, stride=2),
             LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
         )
         self.downsample_layers = nn.ModuleList()
