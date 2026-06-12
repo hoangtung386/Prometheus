@@ -79,14 +79,15 @@ def geojson_to_mask(
         label_key: GeoJSON property key for the class label.
 
     Returns:
-        (C, H, W) uint8 mask where C = len(class_map).
+        (C, H, W) uint8 one-hot mask where C = len(class_map). Channel 0 is
+        filled as background for pixels not covered by foreground polygons.
     """
     with open(geojson_path) as f:
         data = json.load(f)
 
     H, W = image_size
     C = len(class_map)
-    mask = np.zeros((C, H, W), dtype=np.uint8)
+    label_mask = np.zeros((H, W), dtype=np.uint8)
 
     for feature in data.get("features", []):
         props = feature.get("properties", {})
@@ -109,9 +110,19 @@ def geojson_to_mask(
         if geometry is None:
             continue
 
-        for pts in _extract_polygon_coords(geometry):
-            cv2.fillPoly(mask[class_idx], [pts], 1)
+        if class_idx == 0:
+            continue
 
+        for pts in _extract_polygon_coords(geometry):
+            cv2.fillPoly(label_mask, [pts], class_idx)
+
+    mask = np.eye(C, dtype=np.uint8)[label_mask].transpose(2, 0, 1)
+
+    foreground = mask[1:].sum(axis=0) > 0
+    mask[0] = (~foreground).astype(np.uint8)
+
+    assert np.all(mask.sum(axis=0) == 1), \
+        f"Mask must be one-hot per pixel, got sum range [{mask.sum(axis=0).min()}, {mask.sum(axis=0).max()}]"
     return mask
 
 
@@ -148,7 +159,7 @@ class PUMADataset(Dataset):
         self.augment = augment
         self.cache_masks = cache_masks
         self.transforms = transforms
-        self._mask_cache: dict[str, dict[str, np.ndarray]] = {}
+        self._mask_cache: dict[str, np.ndarray] = {}
 
         img_dir = self.root / "images"
         self.image_paths = sorted(img_dir.glob("*.tif"))
@@ -267,6 +278,10 @@ class PUMADataset(Dataset):
         nuclei = torch.stack([b[1]["nuclei"] for b in batch], dim=0)
         return images, {"tissue": tissue, "nuclei": nuclei}
 
+    @staticmethod
+    def _one_hot_to_index(mask: np.ndarray) -> np.ndarray:
+        return mask.argmax(axis=0).astype(np.int64)
+
     def __getitem__(
         self, idx: int,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
@@ -278,8 +293,8 @@ class PUMADataset(Dataset):
         image, tissue_mask, nuclei_mask = self._apply_transforms(image, tissue_mask, nuclei_mask)
 
         targets = {
-            "tissue": torch.from_numpy(tissue_mask).float(),
-            "nuclei": torch.from_numpy(nuclei_mask).float(),
+            "tissue": torch.from_numpy(self._one_hot_to_index(tissue_mask)).long(),
+            "nuclei": torch.from_numpy(self._one_hot_to_index(nuclei_mask)).long(),
         }
         return torch.from_numpy(image), targets
 
@@ -293,36 +308,41 @@ def create_puma_dataloaders(
     seed: int = 42,
     train_transforms: Optional[Callable] = None,
     val_transforms: Optional[Callable] = None,
+    test_split: Optional[float] = None,
+    test_transforms: Optional[Callable] = None,
 ) -> tuple[DataLoader, DataLoader]:
+    _test_split = test_split if test_split is not None else val_split
+    _test_transforms = test_transforms if test_transforms is not None else val_transforms
+
     train_ds = PUMADataset(
         root=root, image_size=image_size, augment=True,
         transforms=train_transforms,
     )
-    val_ds = PUMADataset(
+    test_ds = PUMADataset(
         root=root, image_size=image_size, augment=False,
-        transforms=val_transforms,
+        transforms=_test_transforms,
     )
 
     n = len(train_ds)
-    n_val = max(1, int(n * val_split))
-    n_train = n - n_val
+    n_test = max(1, int(n * _test_split))
+    n_train = n - n_test
 
     gen = torch.Generator().manual_seed(seed)
-    train_indices, val_indices = torch.utils.data.random_split(
-        range(n), [n_train, n_val], generator=gen,
+    train_indices, test_indices = torch.utils.data.random_split(
+        range(n), [n_train, n_test], generator=gen,
     )
 
     train_subset = torch.utils.data.Subset(train_ds, train_indices.indices)
-    val_subset = torch.utils.data.Subset(val_ds, val_indices.indices)
+    test_subset = torch.utils.data.Subset(test_ds, test_indices.indices)
 
     train_loader = DataLoader(
         train_subset, batch_size=batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True,
         collate_fn=PUMADataset.collate_fn,
     )
-    val_loader = DataLoader(
-        val_subset, batch_size=batch_size, shuffle=False,
+    test_loader = DataLoader(
+        test_subset, batch_size=batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True,
         collate_fn=PUMADataset.collate_fn,
     )
-    return train_loader, val_loader
+    return train_loader, test_loader
