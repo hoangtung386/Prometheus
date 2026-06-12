@@ -1,17 +1,19 @@
 from .segmentation import (
     BCEWithLogitsLoss,
+    CombinedLoss,
     DiceLoss,
     FocalLoss,
-    CombinedLoss,
     MultiClassDiceLoss,
+    MulticlassCombinedLoss,
     TverskyLoss,
 )
 
 __all__ = [
     "BCEWithLogitsLoss",
+    "CombinedLoss",
     "DiceLoss",
     "FocalLoss",
-    "CombinedLoss",
     "MultiClassDiceLoss",
+    "MulticlassCombinedLoss",
     "TverskyLoss",
 ]
