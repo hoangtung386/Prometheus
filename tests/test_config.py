@@ -17,10 +17,10 @@ def test_default_config() -> None:
     assert cfg.n_heads == 8
     assert cfg.d_ff == 3072
     assert cfg.d_expert == 256
-    assert cfg.window_size == 4
+    assert cfg.window_size == 8
     assert cfg.num_transformer_blocks == 6
-    assert cfg.num_experts == 512
-    assert cfg.moe_top_k == 8
+    assert cfg.num_experts == 16
+    assert cfg.moe_top_k == 2
     assert cfg.moe_capacity_factor == 1.25
 
 
