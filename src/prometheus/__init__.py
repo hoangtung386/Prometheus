@@ -6,8 +6,10 @@ from .losses import (
     DiceLoss,
     FocalLoss,
     MultiClassDiceLoss,
+    MulticlassCombinedLoss,
     TverskyLoss,
 )
+from .metrics import SegmentationEvaluator
 from .models.unet_dual import DualUNet
 from .models.unet_tissue import UNet as UNetTissue
 
@@ -34,11 +36,13 @@ def __getattr__(name):
 __all__ = [
     "DualUNet",
     "UNetTissue",
+    "SegmentationEvaluator",
     "BCEWithLogitsLoss",
     "DiceLoss",
     "FocalLoss",
     "CombinedLoss",
     "MultiClassDiceLoss",
+    "MulticlassCombinedLoss",
     "TverskyLoss",
     "Trainer",
     "dice_score",
