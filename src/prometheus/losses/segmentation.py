@@ -67,19 +67,47 @@ class CombinedLoss(nn.Module):
 
 
 class MultiClassDiceLoss(nn.Module):
-    def __init__(self, smooth: float = 1e-6) -> None:
+    def __init__(
+        self,
+        smooth: float = 1e-6,
+        include_background: bool = False,
+        ignore_absent: bool = True,
+        class_weights: Optional[torch.Tensor] = None,
+    ) -> None:
         super().__init__()
         self.smooth = smooth
+        self.include_background = include_background
+        self.ignore_absent = ignore_absent
+        if class_weights is not None:
+            self.register_buffer("class_weights", class_weights.float())
+        else:
+            self.class_weights = None
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         num_classes = logits.shape[1]
         probs = F.softmax(logits, dim=1)
         targets_one_hot = F.one_hot(targets, num_classes=num_classes).permute(0, 3, 1, 2).float()
-        dims = (2, 3)
+        dims = (0, 2, 3)
         intersection = (probs * targets_one_hot).sum(dim=dims)
         cardinality = probs.sum(dim=dims) + targets_one_hot.sum(dim=dims)
         dice = (2. * intersection + self.smooth) / (cardinality + self.smooth)
-        return (1 - dice).mean()
+        loss = 1 - dice
+
+        valid = torch.ones(num_classes, dtype=torch.bool, device=logits.device)
+        if not self.include_background and num_classes > 1:
+            valid[0] = False
+        if self.ignore_absent:
+            valid &= targets_one_hot.sum(dim=dims) > 0
+
+        if not valid.any():
+            return logits.sum() * 0.0
+
+        loss = loss[valid]
+        if self.class_weights is not None:
+            weights = self.class_weights.to(logits.device)[valid]
+            weights = weights / weights.mean().clamp_min(self.smooth)
+            loss = loss * weights
+        return loss.mean()
 
 
 class TverskyLoss(nn.Module):
@@ -107,12 +135,23 @@ class MulticlassCombinedLoss(nn.Module):
         dice_weight: float = 1.0,
         class_weights: Optional[torch.Tensor] = None,
         smooth: float = 1e-6,
+        include_background_dice: bool = False,
+        ignore_absent_dice: bool = True,
     ) -> None:
         super().__init__()
         self.ce_weight = ce_weight
         self.dice_weight = dice_weight
         self.ce = nn.CrossEntropyLoss(weight=class_weights)
-        self.dice = MultiClassDiceLoss(smooth=smooth)
+        self.dice = MultiClassDiceLoss(
+            smooth=smooth,
+            include_background=include_background_dice,
+            ignore_absent=ignore_absent_dice,
+            class_weights=class_weights,
+        )
+
+    def components(self, logits: torch.Tensor, targets: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.ce(logits, targets), self.dice(logits, targets)
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        return self.ce_weight * self.ce(logits, targets) + self.dice_weight * self.dice(logits, targets)
+        ce, dice = self.components(logits, targets)
+        return self.ce_weight * ce + self.dice_weight * dice
