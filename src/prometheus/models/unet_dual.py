@@ -66,6 +66,7 @@ class DualUNet(nn.Module):
 
         dims = config.encoder_dims
         depths = config.encoder_depths
+        self.use_tissue_context = config.use_tissue_context
 
         # === TISSUE STREAM ===
         self.tissue_stem, self.tissue_down, self.tissue_stages = build_encoder(
@@ -117,9 +118,10 @@ class DualUNet(nn.Module):
         t_mask, t_full_res_feat = self.tissue_decoder(t_bottleneck, t_skips)
 
         # === TISSUE → NUCLEI CONTEXT (STOP GRADIENT) ===
-        t_context = self.tissue_attention_encoder(t_full_res_feat.detach())
-        B, C, H, W = t_context.shape
-        context_seq = t_context.flatten(2).transpose(1, 2)
+        context_seq = None
+        if self.use_tissue_context:
+            t_context = self.tissue_attention_encoder(t_full_res_feat.detach())
+            context_seq = t_context.flatten(2).transpose(1, 2)
 
         # === NUCLEI STREAM ===
         n_bottleneck, n_skips = forward_encoder(
@@ -129,10 +131,13 @@ class DualUNet(nn.Module):
         n_seq = n_bottleneck.flatten(2).transpose(1, 2)
         n_seq, moe_loss = self.transformer(n_seq, context=context_seq)
 
-        _, L, D = n_seq.shape
+        B, L, D = n_seq.shape
         Hf = Wf = int(L ** 0.5)
         n_transformed = n_seq.transpose(1, 2).reshape(B, D, Hf, Wf)
 
         n_mask = forward_decoder(n_transformed, n_skips, self.nuclei_decoder, self.nuclei_head)
 
         return t_mask, n_mask, moe_loss
+
+    def set_tissue_context_enabled(self, enabled: bool) -> None:
+        self.use_tissue_context = enabled
