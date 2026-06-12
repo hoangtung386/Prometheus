@@ -29,6 +29,13 @@ class LocalGlobalAttention(nn.Module):
         B, L, _ = x.shape
         return x.view(B, L, self.n_heads, self.d_head).transpose(1, 2)
 
+    @staticmethod
+    def _get_valid_window_size(seq_len: int, window_size: int) -> int:
+        for w in range(min(window_size, seq_len), 0, -1):
+            if seq_len % w == 0:
+                return w
+        return 1
+
     def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
         B, L, D = x.shape
 
@@ -49,16 +56,16 @@ class LocalGlobalAttention(nn.Module):
         attn_glob = F.softmax(attn_glob, dim=-1)
         out_glob = attn_glob @ v_glob
 
-        W = self.window_size
+        W = self._get_valid_window_size(L, self.window_size)
         S = context.shape[1] if context is not None else L
-        assert L % W == 0, f"Sequence length {L} must be divisible by window_size {W}"
         num_windows = L // W
 
         q_loc_w = q_loc.view(B, self.local_heads, num_windows, W, self.d_head).reshape(-1, W, self.d_head)
 
         if context is not None:
             S_w = S // num_windows
-            assert S % num_windows == 0, f"Context length {S} must be divisible by {num_windows} windows"
+            if S % num_windows != 0:
+                S_w = self._get_valid_window_size(S, S // num_windows) if S // num_windows > 0 else 1
             k_loc_w = k_loc.view(B, self.local_heads, num_windows, S_w, self.d_head).reshape(-1, S_w, self.d_head)
             v_loc_w = v_loc.view(B, self.local_heads, num_windows, S_w, self.d_head).reshape(-1, S_w, self.d_head)
         else:
