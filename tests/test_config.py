@@ -60,6 +60,11 @@ def test_default_training_config() -> None:
     assert cfg.num_workers == 4
     assert cfg.amp is True
     assert cfg.seed == 42
+    assert cfg.use_class_weights is True
+    assert cfg.class_weight_power == 0.5
+    assert cfg.early_stopping_patience is None
+    assert cfg.early_stopping_monitor == "combined"
+    assert cfg.tissue_context_warmup_epochs == 0
 
 
 def test_custom_training_config() -> None:
