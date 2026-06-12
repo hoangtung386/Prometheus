@@ -54,6 +54,12 @@ def main() -> None:
     parser.add_argument("--ckpt-dir", type=str, default="checkpoints/puma")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--test-split", type=float, default=0.1)
+    parser.add_argument("--no-class-weights", action="store_true")
+    parser.add_argument("--no-stratified-split", action="store_true")
+    parser.add_argument("--class-weight-power", type=float, default=0.5)
+    parser.add_argument("--early-stopping-patience", type=int, default=None)
+    parser.add_argument("--early-stopping-monitor", type=str, default="combined", choices=["combined", "tissue", "nuclei"])
+    parser.add_argument("--tissue-context-warmup-epochs", type=int, default=0)
     args = parser.parse_args()
 
     num_tissue_classes = len(TISSUE_CLASSES)
@@ -73,10 +79,19 @@ def main() -> None:
         test_split=args.test_split,
         log_dir=args.log_dir,
         ckpt_dir=args.ckpt_dir,
+        use_class_weights=not args.no_class_weights,
+        class_weight_power=args.class_weight_power,
+        early_stopping_patience=args.early_stopping_patience,
+        early_stopping_monitor=args.early_stopping_monitor,
+        tissue_context_warmup_epochs=args.tissue_context_warmup_epochs,
     )
 
     if args.model_type == "UNetTissue":
-        model_cfg = ModelConfig(in_chans=3, num_tissue_classes=num_tissue_classes)
+        model_cfg = ModelConfig(
+            in_chans=3,
+            num_classes=num_tissue_classes,
+            num_tissue_classes=num_tissue_classes,
+        )
         model = UNetTissue(config=model_cfg)
     else:
         model_cfg = ModelConfig(
@@ -100,6 +115,7 @@ def main() -> None:
         test_split=args.test_split,
         train_transforms=train_transform(),
         test_transforms=test_transform(),
+        stratified_split=not args.no_stratified_split,
     )
 
     print(f"\nDataset:")
@@ -110,6 +126,10 @@ def main() -> None:
     _print_class_stats(train_loader, TISSUE_CLASSES, "tissue")
     if args.model_type != "UNetTissue":
         _print_class_stats(train_loader, NUCLEI_CLASSES, "nuclei")
+    print("\nTarget class distribution (test set):")
+    _print_class_stats(test_loader, TISSUE_CLASSES, "tissue")
+    if args.model_type != "UNetTissue":
+        _print_class_stats(test_loader, NUCLEI_CLASSES, "nuclei")
 
     print("\nStarting training...")
     trainer = Trainer(
