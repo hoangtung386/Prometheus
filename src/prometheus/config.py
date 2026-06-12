@@ -16,10 +16,10 @@ class ModelConfig:
     n_heads: int = 8
     d_ff: int = 3072
     d_expert: int = 256
-    window_size: int = 4
+    window_size: int = 8
     num_transformer_blocks: int = 6
-    num_experts: int = 512
-    moe_top_k: int = 8
+    num_experts: int = 16
+    moe_top_k: int = 2
     moe_capacity_factor: float = 1.25
 
 
@@ -49,9 +49,9 @@ class TrainingConfig:
 
     image_size: int = 1024
     num_tissue_classes: int = 6
-    num_nuclei_classes: int = 10
+    num_nuclei_classes: int = 11
     data_root: str = ""
-    val_split: float = 0.1
+    test_split: float = 0.1
     log_dir: str = "logs"
     ckpt_dir: str = "checkpoints"
     moe_loss_weight: float = 0.01
