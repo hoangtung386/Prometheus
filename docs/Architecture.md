@@ -14,11 +14,17 @@ Prometheus is a medical image segmentation framework built on a **ConvNeXt-v2 U-
 ```python
 ModelConfig:
   in_chans: 3
-  num_classes: 1
+  num_classes: 1              # used only by UNetTissue output head
+  num_tissue_classes: 6       # used by DualUNet tissue head
+  num_nuclei_classes: 11      # used by DualUNet nuclei head
   encoder_dims: [96, 192, 384, 768]
   encoder_depths: [3, 3, 9, 3]
   drop_path_rate: 0.1
   D: 2
+  window_size: 8              # local window size for attention
+  num_transformer_blocks: 6
+  num_experts: 16
+  moe_top_k: 2
 ```
 
 ## Model Hierarchy
@@ -192,7 +198,7 @@ flowchart LR
 
 **File:** `src/prometheus/models/unet_dual.py`
 
-A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded via `TissueAttentionEncoder` and fused into the nuclei bottleneck through an **EncoderTransformerStack** (6× blocks, each with Self-Attn → FFN → Cross-Attn → Sparse MoE).
+A dual-stream architecture with **stop-gradient** isolation between tissue and nuclei streams. The tissue stream's feature map is encoded via `TissueAttentionEncoder` (2× stem + 3× 2× downsamples = 16× reduction) and fused into the nuclei bottleneck through an **EncoderTransformerStack** (6× blocks, each with Self-Attn → FFN → Cross-Attn → Sparse MoE with 16 experts, top-2).
 
 ```mermaid
 flowchart TB
@@ -210,7 +216,7 @@ flowchart TB
 
     subgraph Bridge["Tissue → Nuclei Bridge"]
         SG["stop_gradient()<br/>detach()"]
-        TAE["TissueAttentionEncoder<br/>Stem + 3 Downsamples<br/>→ (B, 768, H/32, W/32)"]
+        TAE["TissueAttentionEncoder<br/>Stem(s2) + 3 Downsamples(s2)<br/>→ (B, 768, H/16, W/16)"]
     end
 
     subgraph Nuclei["Nuclei Stream"]
@@ -343,7 +349,7 @@ src/prometheus/
 │   └── unet_dual.py         # DualUNet
 ├── losses/
 │   ├── __init__.py
-│   └── segmentation.py      # BCEWithLogitsLoss, DiceLoss, FocalLoss, CombinedLoss, MultiClassDiceLoss, TverskyLoss
+│   └── segmentation.py      # BCEWithLogitsLoss, DiceLoss, FocalLoss, CombinedLoss, MultiClassDiceLoss, MulticlassCombinedLoss, TverskyLoss
 └── utils/
     ├── __init__.py
     └── norm.py              # LayerNorm, GRN
