@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from ..data.puma_dataset import NUCLEI_CLASSES, TISSUE_CLASSES
+
 
 @torch.no_grad()
 def predict_sample(
@@ -34,16 +36,19 @@ def visualize_sample(dataset, idx: int = 0) -> None:
     tissue_mask = targets["tissue"]
     nuclei_mask = targets["nuclei"]
 
-    tissue_overlay = tissue_mask.argmax(dim=0).numpy()
-    nuclei_overlay = nuclei_mask.argmax(dim=0).numpy()
+    tissue_overlay = tissue_mask.numpy() if tissue_mask.ndim == 2 else tissue_mask.argmax(dim=0).numpy()
+    nuclei_overlay = nuclei_mask.numpy() if nuclei_mask.ndim == 2 else nuclei_mask.argmax(dim=0).numpy()
+
+    n_tissue = len(TISSUE_CLASSES)
+    n_nuclei = len(NUCLEI_CLASSES)
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     axes[0].imshow(img.permute(1, 2, 0))
     axes[0].set_title("Input (normalized)")
-    axes[1].imshow(tissue_overlay, cmap="tab10", vmin=0, vmax=5)
-    axes[1].set_title("Tissue (6 classes)")
-    axes[2].imshow(nuclei_overlay, cmap="tab10", vmin=0, vmax=10)
-    axes[2].set_title("Nuclei (10 classes)")
+    axes[1].imshow(tissue_overlay, cmap="tab10", vmin=0, vmax=n_tissue - 1)
+    axes[1].set_title(f"Tissue ({n_tissue} classes)")
+    axes[2].imshow(nuclei_overlay, cmap="tab20", vmin=0, vmax=n_nuclei - 1)
+    axes[2].set_title(f"Nuclei ({n_nuclei} classes)")
     for ax in axes:
         ax.axis("off")
     plt.tight_layout()
@@ -66,19 +71,27 @@ def show_prediction(
     axes[0, 0].imshow(img.permute(1, 2, 0))
     axes[0, 0].set_title("Input")
 
+    def _to_index(mask):
+        return mask if mask.ndim == 2 else mask.argmax(dim=0)
+
+    n_tissue = len(TISSUE_CLASSES)
+    n_nuclei = len(NUCLEI_CLASSES)
+    t_vmax = n_tissue - 1
+    n_vmax = n_nuclei - 1
+
     if model_type == "UNetTissue":
-        axes[0, 1].imshow(targets["tissue"].argmax(dim=0), cmap="tab10", vmin=0, vmax=5)
+        axes[0, 1].imshow(_to_index(targets["tissue"]), cmap="tab10", vmin=0, vmax=t_vmax)
         axes[0, 1].set_title("Tissue GT")
-        axes[0, 2].imshow(pred, cmap="tab10", vmin=0, vmax=5)
+        axes[0, 2].imshow(pred, cmap="tab10", vmin=0, vmax=t_vmax)
         axes[0, 2].set_title("Tissue Pred")
     else:
-        axes[0, 1].imshow(targets["tissue"].argmax(dim=0), cmap="tab10", vmin=0, vmax=5)
+        axes[0, 1].imshow(_to_index(targets["tissue"]), cmap="tab10", vmin=0, vmax=t_vmax)
         axes[0, 1].set_title("Tissue GT")
-        axes[0, 2].imshow(pred["tissue"], cmap="tab10", vmin=0, vmax=5)
+        axes[0, 2].imshow(pred["tissue"], cmap="tab10", vmin=0, vmax=t_vmax)
         axes[0, 2].set_title("Tissue Pred")
-        axes[1, 1].imshow(targets["nuclei"].argmax(dim=0), cmap="tab10", vmin=0, vmax=10)
+        axes[1, 1].imshow(_to_index(targets["nuclei"]), cmap="tab20", vmin=0, vmax=n_vmax)
         axes[1, 1].set_title("Nuclei GT")
-        axes[1, 2].imshow(pred["nuclei"], cmap="tab10", vmin=0, vmax=10)
+        axes[1, 2].imshow(pred["nuclei"], cmap="tab20", vmin=0, vmax=n_vmax)
         axes[1, 2].set_title("Nuclei Pred")
         axes[1, 0].axis("off")
 
