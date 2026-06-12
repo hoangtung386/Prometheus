@@ -98,3 +98,21 @@ class TverskyLoss(nn.Module):
         fn = ((1 - probs) * targets).sum(dim=1)
         tversky = (tp + self.smooth) / (tp + self.alpha * fp + self.beta * fn + self.smooth)
         return 1 - tversky.mean()
+
+
+class MulticlassCombinedLoss(nn.Module):
+    def __init__(
+        self,
+        ce_weight: float = 1.0,
+        dice_weight: float = 1.0,
+        class_weights: Optional[torch.Tensor] = None,
+        smooth: float = 1e-6,
+    ) -> None:
+        super().__init__()
+        self.ce_weight = ce_weight
+        self.dice_weight = dice_weight
+        self.ce = nn.CrossEntropyLoss(weight=class_weights)
+        self.dice = MultiClassDiceLoss(smooth=smooth)
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        return self.ce_weight * self.ce(logits, targets) + self.dice_weight * self.dice(logits, targets)
