@@ -21,6 +21,7 @@ class ModelConfig:
     num_experts: int = 16
     moe_top_k: int = 2
     moe_capacity_factor: float = 1.25
+    use_tissue_context: bool = True
 
 
 DEFAULT_CONFIG = ModelConfig()
@@ -55,6 +56,11 @@ class TrainingConfig:
     log_dir: str = "logs"
     ckpt_dir: str = "checkpoints"
     moe_loss_weight: float = 0.01
+    use_class_weights: bool = True
+    class_weight_power: float = 0.5
+    early_stopping_patience: Optional[int] = None
+    early_stopping_monitor: str = "combined"
+    tissue_context_warmup_epochs: int = 0
 
 
 DEFAULT_TRAINING_CONFIG = TrainingConfig()
