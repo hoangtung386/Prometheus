@@ -8,6 +8,7 @@ from prometheus.losses import (
     DiceLoss,
     FocalLoss,
     MultiClassDiceLoss,
+    MulticlassCombinedLoss,
     TverskyLoss,
 )
 
@@ -71,6 +72,34 @@ def test_multi_class_dice_loss() -> None:
     loss = loss_fn(logits, targets)
     assert loss.item() > 0
     assert loss.ndim == 0
+
+
+def test_multiclass_combined_loss() -> None:
+    loss_fn = MulticlassCombinedLoss(ce_weight=1.0, dice_weight=1.0)
+    logits = torch.randn(4, 3, 64, 64)
+    targets = torch.randint(0, 3, (4, 64, 64))
+    loss = loss_fn(logits, targets)
+    assert loss.item() > 0
+    assert loss.ndim == 0
+
+
+def test_multiclass_combined_loss_perfect_match() -> None:
+    loss_fn = MulticlassCombinedLoss(ce_weight=1.0, dice_weight=1.0)
+    logits = torch.full((2, 3, 16, 16), -10.0)
+    logits[:, 1, :, :] = 10.0
+    targets = torch.ones(2, 16, 16, dtype=torch.long)
+    loss = loss_fn(logits, targets)
+    assert loss.item() < 0.5, f"Expected near-zero loss, got {loss.item()}"
+
+
+def test_multiclass_combined_loss_gradient() -> None:
+    loss_fn = MulticlassCombinedLoss()
+    logits = torch.randn(2, 3, 32, 32, requires_grad=True)
+    targets = torch.randint(0, 3, (2, 32, 32))
+    loss = loss_fn(logits, targets)
+    loss.backward()
+    assert logits.grad is not None
+    assert logits.grad.abs().sum().item() > 0
 
 
 def test_tversky_loss() -> None:
