@@ -141,11 +141,18 @@ def train_transform() -> Compose:
         RandomRotate90(),
         ElasticDeformation(alpha=25, sigma=4, p=0.3),
         RandomBrightnessContrast(brightness=0.05, contrast=0.1),
+        RandomGaussianNoise(std=0.01),
         NormalizeTile(),
     ])
 
 
 def val_transform() -> Compose:
+    return Compose([
+        NormalizeTile(),
+    ])
+
+
+def test_transform() -> Compose:
     return Compose([
         NormalizeTile(),
     ])
