@@ -13,6 +13,7 @@ from prometheus.data.puma_dataset import (
     TISSUE_CLASSES,
     TISSUE_CLASS_TO_IDX,
     PUMADataset,
+    create_puma_dataloaders,
     geojson_to_mask,
 )
 
@@ -98,3 +99,30 @@ def test_puma_dataset_returns_class_index() -> None:
         unique_n = targets["nuclei"].unique()
         assert unique_t.min() >= 0 and unique_t.max() < 6
         assert unique_n.min() >= 0 and unique_n.max() < 11
+
+
+def test_create_puma_dataloaders_stratified_split() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "images").mkdir()
+        (root / "geojson_tissue").mkdir()
+        (root / "geojson_nuclei").mkdir()
+        import tifffile
+
+        for idx in range(4):
+            name = f"sample_{idx}"
+            np_img = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
+            tifffile.imwrite(str(root / "images" / f"{name}.tif"), np_img)
+            _make_dummy_geojson(root / "geojson_tissue" / f"{name}_tissue.geojson", "tissue")
+            _make_dummy_geojson(root / "geojson_nuclei" / f"{name}_nuclei.geojson", "nuclei")
+
+        train_loader, test_loader = create_puma_dataloaders(
+            root=root,
+            image_size=32,
+            batch_size=1,
+            num_workers=0,
+            test_split=0.25,
+            stratified_split=True,
+        )
+        assert len(train_loader.dataset) == 3
+        assert len(test_loader.dataset) == 1
