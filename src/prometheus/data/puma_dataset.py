@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+from collections import Counter
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -126,6 +127,54 @@ def geojson_to_mask(
     return mask
 
 
+def _presence_labels(dataset: "PUMADataset", idx: int) -> set[str]:
+    labels: set[str] = set()
+    for modality in ("tissue", "nuclei"):
+        mask = dataset._load_mask(idx, modality)
+        present = mask.reshape(mask.shape[0], -1).sum(axis=1) > 0
+        for cls_idx in np.flatnonzero(present):
+            if cls_idx == 0:
+                continue
+            labels.add(f"{modality}:{cls_idx}")
+    return labels
+
+
+def _stratified_indices(dataset: "PUMADataset", n_test: int, seed: int) -> tuple[list[int], list[int]]:
+    n = len(dataset)
+    rng = random.Random(seed)
+    all_indices = list(range(n))
+    rng.shuffle(all_indices)
+
+    sample_labels = {idx: _presence_labels(dataset, idx) for idx in all_indices}
+    total_counts: Counter[str] = Counter()
+    for labels in sample_labels.values():
+        total_counts.update(labels)
+
+    target_counts = {
+        label: max(1, round(count * n_test / max(n, 1)))
+        for label, count in total_counts.items()
+    }
+    selected: list[int] = []
+    selected_counts: Counter[str] = Counter()
+    remaining = set(all_indices)
+
+    while len(selected) < n_test and remaining:
+        def score(idx: int) -> tuple[int, int, float]:
+            labels = sample_labels[idx]
+            unmet = sum(selected_counts[label] < target_counts[label] for label in labels)
+            rarity = sum(n - total_counts[label] for label in labels)
+            return unmet, rarity, rng.random()
+
+        best = max(remaining, key=score)
+        selected.append(best)
+        selected_counts.update(sample_labels[best])
+        remaining.remove(best)
+
+    test_indices = sorted(selected)
+    train_indices = sorted(set(range(n)) - set(test_indices))
+    return train_indices, test_indices
+
+
 class PUMADataset(Dataset):
     """PUMA: Panoptic segmentation of nUclei and tissue in MelanomA.
 
@@ -195,7 +244,11 @@ class PUMADataset(Dataset):
             img = cv2.resize(img, (self.image_size, self.image_size),
                              interpolation=cv2.INTER_LINEAR)
 
-        img = img.astype(np.float32).transpose(2, 0, 1)
+        img = img.astype(np.float32)
+        if img.max() > 1.0:
+            scale = 255.0 if img.max() <= 255.0 else 65535.0
+            img = img / scale
+        img = img.transpose(2, 0, 1)
         return img
 
     def _load_mask(self, idx: int, modality: str) -> np.ndarray:
@@ -310,6 +363,7 @@ def create_puma_dataloaders(
     val_transforms: Optional[Callable] = None,
     test_split: Optional[float] = None,
     test_transforms: Optional[Callable] = None,
+    stratified_split: bool = True,
 ) -> tuple[DataLoader, DataLoader]:
     _test_split = test_split if test_split is not None else val_split
     _test_transforms = test_transforms if test_transforms is not None else val_transforms
@@ -327,13 +381,18 @@ def create_puma_dataloaders(
     n_test = max(1, int(n * _test_split))
     n_train = n - n_test
 
-    gen = torch.Generator().manual_seed(seed)
-    train_indices, test_indices = torch.utils.data.random_split(
-        range(n), [n_train, n_test], generator=gen,
-    )
+    if stratified_split:
+        train_indices, test_indices = _stratified_indices(train_ds, n_test, seed)
+    else:
+        gen = torch.Generator().manual_seed(seed)
+        train_split, test_split_indices = torch.utils.data.random_split(
+            range(n), [n_train, n_test], generator=gen,
+        )
+        train_indices = train_split.indices
+        test_indices = test_split_indices.indices
 
-    train_subset = torch.utils.data.Subset(train_ds, train_indices.indices)
-    test_subset = torch.utils.data.Subset(test_ds, test_indices.indices)
+    train_subset = torch.utils.data.Subset(train_ds, train_indices)
+    test_subset = torch.utils.data.Subset(test_ds, test_indices)
 
     train_loader = DataLoader(
         train_subset, batch_size=batch_size, shuffle=True,
