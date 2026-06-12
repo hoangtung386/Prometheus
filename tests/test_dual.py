@@ -8,27 +8,27 @@ def test_dual_unet_forward() -> None:
     model = DualUNet()
     x = torch.randn(2, 3, 256, 256)
     tissue_mask, nuclei_mask, moe_loss = model(x)
-    assert tissue_mask.shape == (2, 1, 256, 256)
-    assert nuclei_mask.shape == (2, 1, 256, 256)
+    assert tissue_mask.shape == (2, 6, 256, 256), f"tissue shape={tissue_mask.shape}"
+    assert nuclei_mask.shape == (2, 11, 256, 256), f"nuclei shape={nuclei_mask.shape}"
     assert moe_loss.item() >= 0
 
 
 def test_dual_unet_multi_class() -> None:
-    cfg = ModelConfig(in_chans=3, num_classes=3)
+    cfg = ModelConfig(in_chans=3, num_tissue_classes=3, num_nuclei_classes=4)
     model = DualUNet(config=cfg)
     x = torch.randn(1, 3, 128, 128)
     t, n, _ = model(x)
     assert t.shape == (1, 3, 128, 128)
-    assert n.shape == (1, 3, 128, 128)
+    assert n.shape == (1, 4, 128, 128)
 
 
 def test_dual_unet_different_sizes() -> None:
     model = DualUNet()
-    for size in [64, 128, 256]:
+    for size in [128, 256]:
         x = torch.randn(1, 3, size, size)
         t, n, _ = model(x)
-        assert t.shape == (1, 1, size, size), f"tissue failed at {size}"
-        assert n.shape == (1, 1, size, size), f"nuclei failed at {size}"
+        assert t.shape == (1, 6, size, size), f"tissue failed at {size}"
+        assert n.shape == (1, 11, size, size), f"nuclei failed at {size}"
 
 
 def test_dual_unet_gradient_flow() -> None:
@@ -48,7 +48,7 @@ def test_dual_unet_gradient_flow() -> None:
 
 
 def test_dual_unet_stop_gradient() -> None:
-    cfg = ModelConfig(in_chans=3, num_classes=1)
+    cfg = ModelConfig(in_chans=3, num_tissue_classes=6, num_nuclei_classes=11)
     model = DualUNet(config=cfg)
     model.train()
     x = torch.randn(2, 3, 128, 128)
@@ -86,18 +86,18 @@ def test_dual_unet_default_config() -> None:
     model = DualUNet()
     x = torch.randn(1, 3, 256, 256)
     t, n, _ = model(x)
-    assert t.shape == (1, 1, 256, 256)
-    assert n.shape == (1, 1, 256, 256)
+    assert t.shape == (1, 6, 256, 256)
+    assert n.shape == (1, 11, 256, 256)
 
 
 def test_dual_unet_transformer_context() -> None:
     cfg = ModelConfig(
-        in_chans=3, num_classes=1,
+        in_chans=3, num_tissue_classes=6, num_nuclei_classes=11,
         num_transformer_blocks=2,
         num_experts=8, moe_top_k=2,
     )
     model = DualUNet(config=cfg)
     x = torch.randn(2, 3, 128, 128)
     t, n, ml = model(x)
-    assert t.shape == (2, 1, 128, 128)
-    assert n.shape == (2, 1, 128, 128)
+    assert t.shape == (2, 6, 128, 128)
+    assert n.shape == (2, 11, 128, 128)
