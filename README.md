@@ -19,7 +19,7 @@ Three model variants built on a **ConvNeXt-v2 U-Net** backbone:
 ### Nuclei Stream
 - ConvNeXt encoder → **EncoderTransformerStack** (6 blocks, each: Self-Attn → FFN → Cross-Attn → MoE) → decoder → nuclei mask
 - Each block uses **Local-Global Attention**: 50/50 heads split between windowed (Swin-style) and full-sequence attention
-- **Dense FFN** + **Sparse MoE** (512 experts, top-8 gating, Down/Up projections, load balancing loss)
+- **Dense FFN** + **Sparse MoE** (16 experts, top-2 gating, Down/Up projections, load balancing loss)
 - Tissue features pass through **stop-gradient** (`.detach()`) → TissueAttentionEncoder → cross-attention context, isolating nuclei gradients from the tissue stream
 
 ### Supporting Components
@@ -45,8 +45,9 @@ All loss functions are importable from the top-level package:
 | `BCEWithLogitsLoss` | Binary cross-entropy with optional pos_weight |
 | `DiceLoss` | Soft Dice loss (sigmoid + Dice coefficient) |
 | `FocalLoss` | Focal loss with tunable α, γ |
-| `CombinedLoss` | Weighted BCE + Dice combination |
+| `CombinedLoss` | Weighted BCE + Dice combination (binary, kept for backward compat) |
 | `MultiClassDiceLoss` | Multi-class Dice via softmax + one-hot encoding |
+| `MulticlassCombinedLoss` | **Default for PUMA**: CrossEntropy + MultiClassDice (softmax-based, multiclass mutually-exclusive) |
 | `TverskyLoss` | Tversky loss with tunable α (FP penalty), β (FN penalty) |
 
 ## Installation
@@ -70,10 +71,10 @@ model = UNetTissue(config=cfg)
 x = torch.randn(2, 3, 256, 256)
 out = model(x)  # (2, 1, 256, 256)
 
-# Dual tissue + nuclei segmentation
-model = DualUNet(config=cfg)
+# Dual tissue + nuclei segmentation (multiclass)
+model = DualUNet()  # default: 6 tissue + 11 nuclei classes
 tissue_mask, nuclei_mask, _ = model(x)
-# tissue_mask: (2, 1, 256, 256), nuclei_mask: (2, 1, 256, 256)
+# tissue_mask: (2, 6, 256, 256), nuclei_mask: (2, 11, 256, 256)
 ```
 
 ### Building custom models with blocks
@@ -104,7 +105,10 @@ flake8 src/
 # Test
 python -m pytest tests/
 
-# Run with your own data
+# Train on PUMA dataset
+python scripts/train_puma.py --data-root /path/to/puma --model-type DualUNet
+
+# Smoke test with dummy data
 python scripts/train_tissue.py
 ```
 
@@ -128,7 +132,7 @@ src/prometheus/
 │   └── unet_dual.py         # DualUNet (dual-stream tissue + nuclei)
 ├── losses/                  # Loss functions
 │   ├── __init__.py
-│   └── segmentation.py      # BCEWithLogitsLoss, DiceLoss, FocalLoss, CombinedLoss, MultiClassDiceLoss, TverskyLoss
+│   └── segmentation.py      # BCEWithLogitsLoss, DiceLoss, FocalLoss, CombinedLoss, MultiClassDiceLoss, MulticlassCombinedLoss, TverskyLoss
 └── utils/                   # Utilities
     ├── __init__.py
     └── norm.py              # LayerNorm, GRN
