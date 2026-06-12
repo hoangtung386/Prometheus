@@ -101,3 +101,24 @@ def test_dual_unet_transformer_context() -> None:
     t, n, ml = model(x)
     assert t.shape == (2, 6, 128, 128)
     assert n.shape == (2, 11, 128, 128)
+
+
+def test_dual_unet_tissue_context_can_be_disabled() -> None:
+    cfg = ModelConfig(
+        in_chans=3,
+        num_tissue_classes=6,
+        num_nuclei_classes=11,
+        use_tissue_context=False,
+        num_transformer_blocks=1,
+        num_experts=4,
+    )
+    model = DualUNet(config=cfg)
+    x = torch.randn(1, 3, 128, 128)
+    t, n, _ = model(x)
+    assert t.shape == (1, 6, 128, 128)
+    assert n.shape == (1, 11, 128, 128)
+
+    model.set_tissue_context_enabled(True)
+    t, n, _ = model(x)
+    assert t.shape == (1, 6, 128, 128)
+    assert n.shape == (1, 11, 128, 128)
