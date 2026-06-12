@@ -86,7 +86,7 @@ class RandomBrightnessContrast:
     def __call__(self, image: np.ndarray, **kwargs) -> dict:
         b = random.uniform(-self.brightness, self.brightness)
         c = 1 + random.uniform(-self.contrast, self.contrast)
-        image = image * c + b
+        image = np.clip(image * c + b, 0.0, 1.0)
         return {"image": image, **kwargs}
 
 
@@ -96,7 +96,37 @@ class RandomGaussianNoise:
 
     def __call__(self, image: np.ndarray, **kwargs) -> dict:
         noise = np.random.randn(*image.shape).astype(np.float32) * self.std
-        image = image + noise
+        image = np.clip(image + noise, 0.0, 1.0)
+        return {"image": image, **kwargs}
+
+
+class RandomChannelJitter:
+    """Lightweight stain-style channel jitter for RGB H&E tiles in [0, 1]."""
+
+    def __init__(self, scale: float = 0.08, shift: float = 0.03, p: float = 0.8) -> None:
+        self.scale = scale
+        self.shift = shift
+        self.p = p
+
+    def __call__(self, image: np.ndarray, **kwargs) -> dict:
+        if random.random() > self.p:
+            return {"image": image, **kwargs}
+        gains = np.random.uniform(1 - self.scale, 1 + self.scale, size=(image.shape[0], 1, 1)).astype(np.float32)
+        shifts = np.random.uniform(-self.shift, self.shift, size=(image.shape[0], 1, 1)).astype(np.float32)
+        image = np.clip(image * gains + shifts, 0.0, 1.0)
+        return {"image": image, **kwargs}
+
+
+class RandomGamma:
+    def __init__(self, gamma_range: tuple[float, float] = (0.8, 1.25), p: float = 0.5) -> None:
+        self.gamma_range = gamma_range
+        self.p = p
+
+    def __call__(self, image: np.ndarray, **kwargs) -> dict:
+        if random.random() > self.p:
+            return {"image": image, **kwargs}
+        gamma = random.uniform(*self.gamma_range)
+        image = np.clip(image, 0.0, 1.0) ** gamma
         return {"image": image, **kwargs}
 
 
@@ -141,6 +171,8 @@ def train_transform() -> Compose:
         RandomRotate90(),
         ElasticDeformation(alpha=25, sigma=4, p=0.3),
         RandomBrightnessContrast(brightness=0.05, contrast=0.1),
+        RandomChannelJitter(scale=0.08, shift=0.03, p=0.8),
+        RandomGamma(gamma_range=(0.8, 1.25), p=0.5),
         RandomGaussianNoise(std=0.01),
         NormalizeTile(),
     ])
