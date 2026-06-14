@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import random
+import time
+import warnings
 from collections import Counter
 from pathlib import Path
 from typing import Callable, Optional
@@ -65,6 +67,25 @@ def _extract_polygon_coords(geometry: dict) -> list[np.ndarray]:
     return []
 
 
+def _read_geojson(geojson_path: Path, retries: int = 2, delay: float = 1.0) -> dict:
+    last_error: OSError | None = None
+    for attempt in range(retries + 1):
+        try:
+            with open(geojson_path) as f:
+                return json.load(f)
+        except OSError as exc:
+            last_error = exc
+            if attempt < retries:
+                time.sleep(delay)
+
+    raise OSError(
+        f"Could not read annotation file {geojson_path}. "
+        "If this path is on Google Drive/Colab and you see "
+        "'Transport endpoint is not connected', remount Drive or copy the "
+        "dataset to local /content storage before training."
+    ) from last_error
+
+
 def geojson_to_mask(
     geojson_path: Path,
     image_size: tuple[int, int],
@@ -83,8 +104,7 @@ def geojson_to_mask(
         (C, H, W) uint8 one-hot mask where C = len(class_map). Channel 0 is
         filled as background for pixels not covered by foreground polygons.
     """
-    with open(geojson_path) as f:
-        data = json.load(f)
+    data = _read_geojson(geojson_path)
 
     H, W = image_size
     C = len(class_map)
@@ -137,6 +157,14 @@ def _presence_labels(dataset: "PUMADataset", idx: int) -> set[str]:
                 continue
             labels.add(f"{modality}:{cls_idx}")
     return labels
+
+
+def _random_split_indices(n: int, n_test: int, seed: int) -> tuple[list[int], list[int]]:
+    gen = torch.Generator().manual_seed(seed)
+    train_split, test_split_indices = torch.utils.data.random_split(
+        range(n), [n - n_test, n_test], generator=gen,
+    )
+    return train_split.indices, test_split_indices.indices
 
 
 def _stratified_indices(dataset: "PUMADataset", n_test: int, seed: int) -> tuple[list[int], list[int]]:
@@ -379,17 +407,21 @@ def create_puma_dataloaders(
 
     n = len(train_ds)
     n_test = max(1, int(n * _test_split))
-    n_train = n - n_test
 
     if stratified_split:
-        train_indices, test_indices = _stratified_indices(train_ds, n_test, seed)
+        try:
+            train_indices, test_indices = _stratified_indices(train_ds, n_test, seed)
+        except OSError as exc:
+            warnings.warn(
+                "Could not build stratified split from annotation files; "
+                "falling back to a deterministic random split. "
+                f"Original error: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            train_indices, test_indices = _random_split_indices(n, n_test, seed)
     else:
-        gen = torch.Generator().manual_seed(seed)
-        train_split, test_split_indices = torch.utils.data.random_split(
-            range(n), [n_train, n_test], generator=gen,
-        )
-        train_indices = train_split.indices
-        test_indices = test_split_indices.indices
+        train_indices, test_indices = _random_split_indices(n, n_test, seed)
 
     train_subset = torch.utils.data.Subset(train_ds, train_indices)
     test_subset = torch.utils.data.Subset(test_ds, test_indices)
