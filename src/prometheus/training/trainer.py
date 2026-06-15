@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import time
 from typing import Optional, Union
 
 import torch
@@ -114,6 +115,46 @@ def compute_class_weights(
     return weights
 
 
+def compute_class_weights_for_modalities(
+    loader: DataLoader,
+    modalities: dict[str, int],
+    power: float = 0.5,
+    eps: float = 1e-6,
+) -> dict[str, torch.Tensor]:
+    """Compute class weights for multiple target masks in one loader pass."""
+    counts = {
+        modality: torch.zeros(num_classes, dtype=torch.float64)
+        for modality, num_classes in modalities.items()
+    }
+    started = time.time()
+    total_batches = len(loader)
+    print(
+        "Computing class weights on CPU "
+        f"({', '.join(modalities.keys())}, {total_batches} batches)..."
+    )
+    for batch_idx, (_, targets) in enumerate(loader, start=1):
+        for modality, num_classes in modalities.items():
+            mask = targets[modality]
+            counts[modality] += torch.bincount(
+                mask.reshape(-1), minlength=num_classes,
+            ).double()
+        if batch_idx == 1 or batch_idx % 25 == 0 or batch_idx == total_batches:
+            elapsed = time.time() - started
+            print(f"  class weights: {batch_idx}/{total_batches} batches ({elapsed:.1f}s)")
+
+    weights_by_modality: dict[str, torch.Tensor] = {}
+    for modality, modality_counts in counts.items():
+        present = modality_counts > 0
+        weights = torch.ones(modalities[modality], dtype=torch.float32)
+        if present.any():
+            freq = modality_counts[present] / modality_counts[present].sum().clamp_min(eps)
+            inv = (1.0 / freq.clamp_min(eps)).pow(power)
+            inv = inv / inv.mean().clamp_min(eps)
+            weights[present] = inv.float()
+        weights_by_modality[modality] = weights
+    return weights_by_modality
+
+
 def train_one_epoch(
     model: nn.Module,
     loader: DataLoader,
@@ -145,7 +186,8 @@ def train_one_epoch(
 
         optimizer.zero_grad(set_to_none=True)
 
-        with torch.amp.autocast('cuda', enabled=config.amp):
+        amp_enabled = config.amp and device.type == "cuda"
+        with torch.amp.autocast(device_type=device.type, enabled=amp_enabled):
             if config.model_type == "UNetTissue":
                 logits = model(images)
                 loss, t_ce, t_dice = _loss_components(
@@ -268,6 +310,13 @@ class Trainer:
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model.to(self.device)
+        first_param = next(self.model.parameters(), None)
+        model_device = first_param.device if first_param is not None else self.device
+        print(f"Trainer device: {self.device} (model parameters on {model_device})")
+        if self.device.type == "cuda":
+            total_gb = torch.cuda.get_device_properties(self.device).total_memory / 1024**3
+            allocated_gb = torch.cuda.memory_allocated(self.device) / 1024**3
+            print(f"CUDA memory after model.to(): {allocated_gb:.2f}/{total_gb:.1f} GiB")
 
         self.optimizer = optim.AdamW(
             model.parameters(),
@@ -285,17 +334,18 @@ class Trainer:
             ),
         )
 
-        self.scaler = torch.amp.GradScaler('cuda', enabled=config.amp)
+        self.scaler = torch.amp.GradScaler('cuda', enabled=config.amp and self.device.type == "cuda")
         tissue_weights = None
         nuclei_weights = None
         if config.use_class_weights:
-            tissue_weights = compute_class_weights(
-                train_loader, "tissue", config.num_tissue_classes, config.class_weight_power,
-            )
+            modalities = {"tissue": config.num_tissue_classes}
             if config.model_type != "UNetTissue":
-                nuclei_weights = compute_class_weights(
-                    train_loader, "nuclei", config.num_nuclei_classes, config.class_weight_power,
-                )
+                modalities["nuclei"] = config.num_nuclei_classes
+            weights = compute_class_weights_for_modalities(
+                train_loader, modalities, config.class_weight_power,
+            )
+            tissue_weights = weights["tissue"]
+            nuclei_weights = weights.get("nuclei")
             print(f"Class weights/tissue: {[round(v, 4) for v in tissue_weights.tolist()]}")
             if nuclei_weights is not None:
                 print(f"Class weights/nuclei: {[round(v, 4) for v in nuclei_weights.tolist()]}")
