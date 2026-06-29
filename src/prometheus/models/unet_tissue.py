@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Optional
-
 import torch
 import torch.nn as nn
 
@@ -24,7 +22,7 @@ class Encoder(nn.Module):
             drop_path_rate=config.drop_path_rate,
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, List[List[torch.Tensor]]]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[list[torch.Tensor]]]:
         return forward_encoder(x, self.stem, self.downsample_layers, self.stages)
 
 
@@ -37,14 +35,12 @@ class Decoder(nn.Module):
             num_classes=config.num_classes,
         )
 
-    def forward(
-        self, x: torch.Tensor, skips: List[List[torch.Tensor]]
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, skips: list[list[torch.Tensor]]) -> torch.Tensor:
         return forward_decoder(x, skips, self.levels, self.output_head)
 
 
 class UNet(nn.Module):
-    def __init__(self, config: Optional[ModelConfig] = None) -> None:
+    def __init__(self, config: ModelConfig | None = None) -> None:
         super().__init__()
         if config is None:
             config = ModelConfig()

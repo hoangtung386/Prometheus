@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Type
-
 import torch
 import torch.nn as nn
 
@@ -11,10 +9,10 @@ from ..utils import LayerNorm
 
 def build_encoder(
     in_chans: int,
-    dims: List[int],
-    depths: List[int],
-    drop_path_rate: float = 0.,
-    block_cls: Type = ConvNeXtBlock,
+    dims: list[int],
+    depths: list[int],
+    drop_path_rate: float = 0.0,
+    block_cls: type = ConvNeXtBlock,
 ) -> tuple[nn.Module, nn.ModuleList, nn.ModuleList]:
     stem = nn.Sequential(
         nn.Conv2d(in_chans, dims[0], kernel_size=4, stride=4),
@@ -34,9 +32,7 @@ def build_encoder(
     dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
     cur = 0
     for i in range(4):
-        stage = nn.Sequential(
-            *[block_cls(dim=dims[i], drop_path=dp_rates[cur + j]) for j in range(depths[i])]
-        )
+        stage = nn.Sequential(*[block_cls(dim=dims[i], drop_path=dp_rates[cur + j]) for j in range(depths[i])])
         stages.append(stage)
         cur += depths[i]
 
@@ -48,11 +44,11 @@ def forward_encoder(
     stem: nn.ModuleList,
     downsample_layers: nn.ModuleList,
     stages: nn.ModuleList,
-) -> tuple[torch.Tensor, List[List[torch.Tensor]]]:
-    all_skips: List[List[torch.Tensor]] = []
+) -> tuple[torch.Tensor, list[list[torch.Tensor]]]:
+    all_skips: list[list[torch.Tensor]] = []
 
     x = stem(x)
-    stage_skips: List[torch.Tensor] = []
+    stage_skips: list[torch.Tensor] = []
     for layer in stages[0]:
         x = layer(x)
         stage_skips.append(x)
@@ -70,8 +66,8 @@ def forward_encoder(
 
 
 def build_decoder(
-    encoder_dims: List[int],
-    encoder_depths: List[int],
+    encoder_dims: list[int],
+    encoder_depths: list[int],
     num_classes: int = 1,
     block_cls: type[nn.Module] = DecoderBlock,
 ) -> tuple[nn.ModuleList, nn.Module]:
@@ -94,7 +90,7 @@ def build_decoder(
 
         layers = nn.ModuleList()
         for j in range(depth):
-            has_upsample = (j == 0)
+            has_upsample = j == 0
             layers.append(
                 block_cls(
                     dim=dim,
@@ -114,7 +110,7 @@ def build_decoder(
 
 def forward_decoder(
     x: torch.Tensor,
-    skips: List[List[torch.Tensor]],
+    skips: list[list[torch.Tensor]],
     levels: nn.ModuleList,
     output_head: nn.Module,
 ) -> torch.Tensor:
@@ -122,8 +118,7 @@ def forward_decoder(
         stage_skips = skips[2 - level]
         if len(stage_skips) != len(levels[level]):
             raise ValueError(
-                f"Decoder level {level} expected {len(levels[level])} skip tensors, "
-                f"got {len(stage_skips)}"
+                f"Decoder level {level} expected {len(levels[level])} skip tensors, got {len(stage_skips)}"
             )
         for j, layer in enumerate(levels[level]):
             x = layer(x, stage_skips[j])

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List, Optional
-
 import torch
 import torch.nn as nn
 
@@ -17,7 +15,7 @@ class TissueAttentionEncoder(nn.Module):
     Matches the diagram: Output_Tissue → Stop Gradient → Encoder_Attention
     """
 
-    def __init__(self, in_channels: int, dims: List[int]) -> None:
+    def __init__(self, in_channels: int, dims: list[int]) -> None:
         super().__init__()
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, dims[0], kernel_size=2, stride=2),
@@ -40,15 +38,13 @@ class TissueAttentionEncoder(nn.Module):
 
 
 class TissueDecoder(nn.Module):
-    def __init__(self, encoder_dims: List[int], encoder_depths: List[int], num_classes: int = 1) -> None:
+    def __init__(self, encoder_dims: list[int], encoder_depths: list[int], num_classes: int = 1) -> None:
         super().__init__()
         self.levels, output_head = build_decoder(encoder_dims, encoder_depths, num_classes)
         self.feature_head = output_head[0]
         self.mask_head = output_head[1]
 
-    def forward(
-        self, x: torch.Tensor, skips: List[List[torch.Tensor]]
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, skips: list[list[torch.Tensor]]) -> tuple[torch.Tensor, torch.Tensor]:
         for level in range(3):
             stage_skips = skips[2 - level]
             for j, layer in enumerate(self.levels[level]):
@@ -59,7 +55,7 @@ class TissueDecoder(nn.Module):
 
 
 class DualUNet(nn.Module):
-    def __init__(self, config: Optional[ModelConfig] = None) -> None:
+    def __init__(self, config: ModelConfig | None = None) -> None:
         super().__init__()
         if config is None:
             config = ModelConfig()
@@ -113,7 +109,10 @@ class DualUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # === TISSUE STREAM ===
         t_bottleneck, t_skips = forward_encoder(
-            x, self.tissue_stem, self.tissue_down, self.tissue_stages,
+            x,
+            self.tissue_stem,
+            self.tissue_down,
+            self.tissue_stages,
         )
         t_mask, t_full_res_feat = self.tissue_decoder(t_bottleneck, t_skips)
 
@@ -125,14 +124,17 @@ class DualUNet(nn.Module):
 
         # === NUCLEI STREAM ===
         n_bottleneck, n_skips = forward_encoder(
-            x, self.nuclei_stem, self.nuclei_down, self.nuclei_stages,
+            x,
+            self.nuclei_stem,
+            self.nuclei_down,
+            self.nuclei_stages,
         )
 
         n_seq = n_bottleneck.flatten(2).transpose(1, 2)
         n_seq, moe_loss = self.transformer(n_seq, context=context_seq)
 
         B, L, D = n_seq.shape
-        Hf = Wf = int(L ** 0.5)
+        Hf = Wf = int(L**0.5)
         n_transformed = n_seq.transpose(1, 2).reshape(B, D, Hf, Wf)
 
         n_mask = forward_decoder(n_transformed, n_skips, self.nuclei_decoder, self.nuclei_head)

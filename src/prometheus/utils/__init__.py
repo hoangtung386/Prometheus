@@ -1,4 +1,4 @@
-from .norm import LayerNorm, GRN
+from .norm import GRN, LayerNorm
 
 __all__ = [
     "LayerNorm",

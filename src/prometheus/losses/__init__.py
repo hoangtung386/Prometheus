@@ -3,8 +3,8 @@ from .segmentation import (
     CombinedLoss,
     DiceLoss,
     FocalLoss,
-    MultiClassDiceLoss,
     MulticlassCombinedLoss,
+    MultiClassDiceLoss,
     TverskyLoss,
 )
 

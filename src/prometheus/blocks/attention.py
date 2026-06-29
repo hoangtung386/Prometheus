@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -36,7 +34,7 @@ class LocalGlobalAttention(nn.Module):
                 return w
         return 1
 
-    def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, context: torch.Tensor | None = None) -> torch.Tensor:
         B, L, D = x.shape
 
         q = self._format_heads(self.q_proj(x))
@@ -52,7 +50,7 @@ class LocalGlobalAttention(nn.Module):
         k_loc, k_glob = torch.split(k, [self.local_heads, self.global_heads], dim=1)
         v_loc, v_glob = torch.split(v, [self.local_heads, self.global_heads], dim=1)
 
-        attn_glob = (q_glob @ k_glob.transpose(-2, -1)) * (self.d_head ** -0.5)
+        attn_glob = (q_glob @ k_glob.transpose(-2, -1)) * (self.d_head**-0.5)
         attn_glob = F.softmax(attn_glob, dim=-1)
         out_glob = attn_glob @ v_glob
 
@@ -72,13 +70,13 @@ class LocalGlobalAttention(nn.Module):
             k_loc_w = k_loc.view(B, self.local_heads, num_windows, W, self.d_head).reshape(-1, W, self.d_head)
             v_loc_w = v_loc.view(B, self.local_heads, num_windows, W, self.d_head).reshape(-1, W, self.d_head)
 
-        attn_loc = (q_loc_w @ k_loc_w.transpose(-2, -1)) * (self.d_head ** -0.5)
+        attn_loc = (q_loc_w @ k_loc_w.transpose(-2, -1)) * (self.d_head**-0.5)
         attn_loc = F.softmax(attn_loc, dim=-1)
         out_loc_w = attn_loc @ v_loc_w
 
-        out_loc = out_loc_w.view(
-            B, self.local_heads, num_windows, W, self.d_head
-        ).reshape(B, self.local_heads, L, self.d_head)
+        out_loc = out_loc_w.view(B, self.local_heads, num_windows, W, self.d_head).reshape(
+            B, self.local_heads, L, self.d_head
+        )
 
         out = torch.cat([out_loc, out_glob], dim=1)
         out = out.transpose(1, 2).contiguous().view(B, L, D)

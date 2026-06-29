@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import os
 import time
-from typing import Optional, Union
 
 import torch
 import torch.nn as nn
@@ -12,9 +11,11 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from ..config import TrainingConfig
-from ..data.puma_dataset import NUCLEI_CLASSES, TISSUE_CLASSES
+from ..data.puma import NUCLEI_CLASSES, TISSUE_CLASSES
 from ..losses import MulticlassCombinedLoss
 from ..metrics import SegmentationEvaluator
+from .checkpointing import load_checkpoint, save_checkpoint
+from .state import TrainState
 
 
 def dice_score(
@@ -39,23 +40,12 @@ def dice_score(
         valid &= target_onehot.sum(dim=(2, 3)) > 0
 
     scores = []
-    for sample_dice, sample_valid in zip(dice, valid):
+    for sample_dice, sample_valid in zip(dice, valid, strict=True):
         if sample_valid.any():
             scores.append(sample_dice[sample_valid].mean())
         else:
             scores.append(torch.tensor(float("nan"), device=pred.device))
     return torch.stack(scores)
-
-
-def per_class_dice(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
-    num_classes = pred.shape[1]
-    pred_idx = pred.argmax(dim=1)
-    pred_onehot = F.one_hot(pred_idx, num_classes=num_classes).permute(0, 3, 1, 2).float()
-    target_onehot = F.one_hot(target, num_classes=num_classes).permute(0, 3, 1, 2).float()
-    intersection = (pred_onehot * target_onehot).sum(dim=(2, 3))
-    cardinality = pred_onehot.sum(dim=(2, 3)) + target_onehot.sum(dim=(2, 3))
-    dice = (2. * intersection + eps) / (cardinality + eps)
-    return dice  # (B, C)
 
 
 def warmup_cosine_lr(
@@ -71,7 +61,7 @@ def warmup_cosine_lr(
     return min_lr_ratio + (1 - min_lr_ratio) * cosine
 
 
-CriterionLike = Union[nn.Module, dict[str, nn.Module]]
+CriterionLike = nn.Module | dict[str, nn.Module]
 
 
 def _criterion_for(criterion: CriterionLike, modality: str) -> nn.Module:
@@ -93,28 +83,6 @@ def _loss_components(
     return loss, nan, nan
 
 
-def compute_class_weights(
-    loader: DataLoader,
-    modality: str,
-    num_classes: int,
-    power: float = 0.5,
-    eps: float = 1e-6,
-) -> torch.Tensor:
-    counts = torch.zeros(num_classes, dtype=torch.float64)
-    for _, targets in loader:
-        mask = targets[modality]
-        counts += torch.bincount(mask.reshape(-1), minlength=num_classes).double()
-
-    present = counts > 0
-    weights = torch.ones(num_classes, dtype=torch.float32)
-    if present.any():
-        freq = counts[present] / counts[present].sum().clamp_min(eps)
-        inv = (1.0 / freq.clamp_min(eps)).pow(power)
-        inv = inv / inv.mean().clamp_min(eps)
-        weights[present] = inv.float()
-    return weights
-
-
 def compute_class_weights_for_modalities(
     loader: DataLoader,
     modalities: dict[str, int],
@@ -122,21 +90,16 @@ def compute_class_weights_for_modalities(
     eps: float = 1e-6,
 ) -> dict[str, torch.Tensor]:
     """Compute class weights for multiple target masks in one loader pass."""
-    counts = {
-        modality: torch.zeros(num_classes, dtype=torch.float64)
-        for modality, num_classes in modalities.items()
-    }
+    counts = {modality: torch.zeros(num_classes, dtype=torch.float64) for modality, num_classes in modalities.items()}
     started = time.time()
     total_batches = len(loader)
-    print(
-        "Computing class weights on CPU "
-        f"({', '.join(modalities.keys())}, {total_batches} batches)..."
-    )
+    print(f"Computing class weights on CPU ({', '.join(modalities.keys())}, {total_batches} batches)...")
     for batch_idx, (_, targets) in enumerate(loader, start=1):
         for modality, num_classes in modalities.items():
             mask = targets[modality]
             counts[modality] += torch.bincount(
-                mask.reshape(-1), minlength=num_classes,
+                mask.reshape(-1),
+                minlength=num_classes,
             ).double()
         if batch_idx == 1 or batch_idx % 25 == 0 or batch_idx == total_batches:
             elapsed = time.time() - started
@@ -191,22 +154,24 @@ def train_one_epoch(
             if config.model_type == "UNetTissue":
                 logits = model(images)
                 loss, t_ce, t_dice = _loss_components(
-                    _criterion_for(criterion, "tissue"), logits, t_mask,
+                    _criterion_for(criterion, "tissue"),
+                    logits,
+                    t_mask,
                 )
                 n_ce = n_dice = moe_loss = torch.tensor(float("nan"), device=device)
             else:
                 pred_t, pred_n, moe_loss = model(images)
                 t_loss, t_ce, t_dice = _loss_components(
-                    _criterion_for(criterion, "tissue"), pred_t, t_mask,
+                    _criterion_for(criterion, "tissue"),
+                    pred_t,
+                    t_mask,
                 )
                 n_loss, n_ce, n_dice = _loss_components(
-                    _criterion_for(criterion, "nuclei"), pred_n, n_mask,
+                    _criterion_for(criterion, "nuclei"),
+                    pred_n,
+                    n_mask,
                 )
-                loss = (
-                    t_loss
-                    + n_loss
-                    + config.moe_loss_weight * moe_loss
-                )
+                loss = t_loss + n_loss + config.moe_loss_weight * moe_loss
 
         scaler.scale(loss).backward()
         grad_norm = torch.tensor(0.0, device=device)
@@ -245,8 +210,8 @@ def validate(
     criterion: CriterionLike,
     config: TrainingConfig,
     device: torch.device,
-    eval_t: Optional[SegmentationEvaluator] = None,
-    eval_n: Optional[SegmentationEvaluator] = None,
+    eval_t: SegmentationEvaluator | None = None,
+    eval_n: SegmentationEvaluator | None = None,
 ) -> tuple[float, float, float]:
     """Run evaluation loop.
 
@@ -270,9 +235,8 @@ def validate(
                 eval_t.update(logits, t_mask)
         else:
             pred_t, pred_n, _ = model(images)
-            loss = (
-                _criterion_for(criterion, "tissue")(pred_t, t_mask)
-                + _criterion_for(criterion, "nuclei")(pred_n, n_mask)
+            loss = _criterion_for(criterion, "tissue")(pred_t, t_mask) + _criterion_for(criterion, "nuclei")(
+                pred_n, n_mask
             )
             dice_tissue.append(dice_score(pred_t, t_mask))
             dice_nuclei.append(dice_score(pred_n, n_mask))
@@ -299,9 +263,9 @@ class Trainer:
         model: nn.Module,
         train_loader: DataLoader,
         config: TrainingConfig,
-        device: Optional[torch.device] = None,
-        test_loader: Optional[DataLoader] = None,
-        val_loader: Optional[DataLoader] = None,
+        device: torch.device | None = None,
+        test_loader: DataLoader | None = None,
+        val_loader: DataLoader | None = None,
     ) -> None:
         self.model = model
         self.train_loader = train_loader
@@ -330,19 +294,24 @@ class Trainer:
         self.scheduler = optim.lr_scheduler.LambdaLR(
             self.optimizer,
             lr_lambda=lambda epoch: warmup_cosine_lr(
-                epoch, config.warmup_epochs, config.epochs, min_lr_ratio,
+                epoch,
+                config.warmup_epochs,
+                config.epochs,
+                min_lr_ratio,
             ),
         )
 
-        self.scaler = torch.amp.GradScaler('cuda', enabled=config.amp and self.device.type == "cuda")
+        self.scaler = torch.amp.GradScaler("cuda", enabled=config.amp and self.device.type == "cuda")
         tissue_weights = None
         nuclei_weights = None
         if config.use_class_weights:
-            modalities = {"tissue": config.num_tissue_classes}
+            modalities = {"tissue": len(TISSUE_CLASSES)}
             if config.model_type != "UNetTissue":
-                modalities["nuclei"] = config.num_nuclei_classes
+                modalities["nuclei"] = len(NUCLEI_CLASSES)
             weights = compute_class_weights_for_modalities(
-                train_loader, modalities, config.class_weight_power,
+                train_loader,
+                modalities,
+                config.class_weight_power,
             )
             tissue_weights = weights["tissue"]
             nuclei_weights = weights.get("nuclei")
@@ -352,10 +321,14 @@ class Trainer:
 
         self.criterion: CriterionLike = {
             "tissue": MulticlassCombinedLoss(
-                ce_weight=1.0, dice_weight=1.0, class_weights=tissue_weights,
+                ce_weight=1.0,
+                dice_weight=1.0,
+                class_weights=tissue_weights,
             ).to(self.device),
             "nuclei": MulticlassCombinedLoss(
-                ce_weight=1.0, dice_weight=1.0, class_weights=nuclei_weights,
+                ce_weight=1.0,
+                dice_weight=1.0,
+                class_weights=nuclei_weights,
             ).to(self.device),
         }
 
@@ -363,6 +336,7 @@ class Trainer:
         os.makedirs(config.ckpt_dir, exist_ok=True)
         try:
             from torch.utils.tensorboard import SummaryWriter
+
             self._writer = SummaryWriter(log_dir=config.log_dir)
         except ModuleNotFoundError:
             print("Warning: tensorboard not installed, metrics will not be logged")
@@ -374,23 +348,22 @@ class Trainer:
         self.start_epoch = 0
         self._epochs_without_improvement = 0
 
-    def _checkpoint_payload(self, epoch: int) -> dict:
-        return {
-            "epoch": epoch,
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
-            "scheduler_state_dict": self.scheduler.state_dict(),
-            "scaler_state_dict": self.scaler.state_dict(),
-            "best_dice": self.best_dice,
-            "best_tissue_dice": self.best_tissue_dice,
-            "best_nuclei_dice": self.best_nuclei_dice,
-            "config": self.config,
-        }
-
     def _save_checkpoint(self, epoch: int, name: str) -> None:
-        torch.save(
-            self._checkpoint_payload(epoch),
+        save_checkpoint(
             os.path.join(self.config.ckpt_dir, name),
+            model=self.model,
+            model_name=self.config.model_type,
+            config=self.config,
+            train_state=TrainState(
+                epoch=epoch,
+                best_metric=self.best_dice,
+                best_tissue_metric=self.best_tissue_dice,
+                best_nuclei_metric=self.best_nuclei_dice,
+                early_stopping_counter=self._epochs_without_improvement,
+            ),
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,
+            scaler=self.scaler,
         )
 
     def fit(self) -> float:
@@ -400,23 +373,40 @@ class Trainer:
                     epoch >= self.config.tissue_context_warmup_epochs,
                 )
             train_metrics = train_one_epoch(
-                self.model, self.train_loader, self.optimizer,
-                self.criterion, self.scaler, epoch, self.config, self.device,
+                self.model,
+                self.train_loader,
+                self.optimizer,
+                self.criterion,
+                self.scaler,
+                epoch,
+                self.config,
+                self.device,
                 return_details=True,
             )
             train_loss = train_metrics["loss"]
             self.scheduler.step()
 
             eval_t = SegmentationEvaluator(
-                len(TISSUE_CLASSES), TISSUE_CLASSES,
+                len(TISSUE_CLASSES),
+                TISSUE_CLASSES,
             )
-            eval_n = SegmentationEvaluator(
-                len(NUCLEI_CLASSES), NUCLEI_CLASSES,
-            ) if self.config.model_type != "UNetTissue" else None
+            eval_n = (
+                SegmentationEvaluator(
+                    len(NUCLEI_CLASSES),
+                    NUCLEI_CLASSES,
+                )
+                if self.config.model_type != "UNetTissue"
+                else None
+            )
 
             test_loss, test_dice_t, test_dice_n = validate(
-                self.model, self.test_loader, self.criterion, self.config, self.device,
-                eval_t=eval_t, eval_n=eval_n,
+                self.model,
+                self.test_loader,
+                self.criterion,
+                self.config,
+                self.device,
+                eval_t=eval_t,
+                eval_n=eval_n,
             )
             log_t = eval_t.log_dict("tissue")
             log_n = eval_n.log_dict("nuclei") if eval_n is not None else {}
@@ -439,13 +429,17 @@ class Trainer:
                 self._writer.add_scalar("Best/tissue", self.best_tissue_dice, epoch)
                 self._writer.add_scalar("Best/nuclei", self.best_nuclei_dice, epoch)
 
-            print(f"\n{'='*70}")
-            print(f"  Epoch {epoch:03d}  |  Train loss: {train_loss:.4f}  |  Test loss: {test_loss:.4f}  |  LR: {self.optimizer.param_groups[0]['lr']:.2e}")
+            print(f"\n{'=' * 70}")
+            learning_rate = self.optimizer.param_groups[0]["lr"]
+            print(
+                f"  Epoch {epoch:03d}  |  Train loss: {train_loss:.4f}  |  "
+                f"Test loss: {test_loss:.4f}  |  LR: {learning_rate:.2e}"
+            )
             print(f"  Mean Dice — tissue: {test_dice_t:.4f}  nuclei: {test_dice_n:.4f}")
             print(eval_t.summary("Tissue"))
             if eval_n is not None:
                 print(eval_n.summary("Nuclei"))
-            print(f"{'='*70}\n")
+            print(f"{'=' * 70}\n")
 
             monitor = test_dice_t + test_dice_n if test_dice_n > 0 else test_dice_t
             if self.config.early_stopping_monitor == "tissue":
@@ -453,9 +447,7 @@ class Trainer:
             elif self.config.early_stopping_monitor == "nuclei":
                 monitor = test_dice_n
             elif self.config.early_stopping_monitor != "combined":
-                raise ValueError(
-                    "early_stopping_monitor must be one of: combined, tissue, nuclei"
-                )
+                raise ValueError("early_stopping_monitor must be one of: combined, tissue, nuclei")
 
             if test_dice_t > self.best_tissue_dice:
                 self.best_tissue_dice = test_dice_t
@@ -496,13 +488,18 @@ class Trainer:
         return self.best_dice
 
     def load_checkpoint(self, path: str) -> None:
-        ckpt = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(ckpt["model_state_dict"])
-        self.optimizer.load_state_dict(ckpt["optimizer_state_dict"])
-        self.scheduler.load_state_dict(ckpt["scheduler_state_dict"])
-        self.scaler.load_state_dict(ckpt["scaler_state_dict"])
-        self.best_dice = ckpt["best_dice"]
-        self.best_tissue_dice = ckpt.get("best_tissue_dice", self.best_dice)
-        self.best_nuclei_dice = ckpt.get("best_nuclei_dice", 0.0)
-        self.start_epoch = ckpt["epoch"] + 1
+        checkpoint = load_checkpoint(path, map_location=self.device)
+        self.model.load_state_dict(checkpoint["model_state"])
+        if checkpoint.get("optimizer_state") is not None:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state"])
+        if checkpoint.get("scheduler_state") is not None:
+            self.scheduler.load_state_dict(checkpoint["scheduler_state"])
+        if checkpoint.get("scaler_state") is not None:
+            self.scaler.load_state_dict(checkpoint["scaler_state"])
+        state = checkpoint.get("train_state", {})
+        self.best_dice = state.get("best_metric", 0.0)
+        self.best_tissue_dice = state.get("best_tissue_metric", self.best_dice)
+        self.best_nuclei_dice = state.get("best_nuclei_metric", 0.0)
+        self._epochs_without_improvement = state.get("early_stopping_counter", 0)
+        self.start_epoch = state.get("epoch", -1) + 1
         print(f"Resumed from epoch {self.start_epoch}, best_dice={self.best_dice:.4f}")

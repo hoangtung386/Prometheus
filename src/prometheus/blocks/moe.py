@@ -18,8 +18,11 @@ class Expert(nn.Module):
 
 class SparseMoE(nn.Module):
     def __init__(
-        self, d_model: int, d_expert: int = 256,
-        num_experts: int = 512, top_k: int = 8,
+        self,
+        d_model: int,
+        d_expert: int = 256,
+        num_experts: int = 512,
+        top_k: int = 8,
         capacity_factor: float = 1.25,
     ) -> None:
         super().__init__()
@@ -31,12 +34,12 @@ class SparseMoE(nn.Module):
         self.up_proj = nn.Linear(d_expert, d_model)
         self.gate = nn.Linear(d_model, num_experts)
 
-        self.experts = nn.ModuleList([
-            Expert(d_expert, d_expert * 4) for _ in range(num_experts)
-        ])
+        self.experts = nn.ModuleList([Expert(d_expert, d_expert * 4) for _ in range(num_experts)])
 
     def _load_balancing_loss(
-        self, gate_weights: torch.Tensor, topk_indices: torch.Tensor,
+        self,
+        gate_weights: torch.Tensor,
+        topk_indices: torch.Tensor,
     ) -> torch.Tensor:
         N = gate_weights.shape[0]
         tokens_per_expert = torch.zeros(self.num_experts, device=gate_weights.device)

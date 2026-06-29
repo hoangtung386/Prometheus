@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.layers import DropPath
 
-from ..utils import LayerNorm, GRN
+from ..utils import GRN, LayerNorm
 
 
 class DecoderBlock(nn.Module):
-    def __init__(
-        self, dim: int, has_upsample: bool = False, in_dim: Optional[int] = None, drop_path: float = 0.
-    ) -> None:
+    def __init__(self, dim: int, has_upsample: bool = False, in_dim: int | None = None, drop_path: float = 0.0) -> None:
         super().__init__()
         self.has_upsample = has_upsample
         if has_upsample:
@@ -26,7 +22,7 @@ class DecoderBlock(nn.Module):
         self.act = nn.GELU()
         self.grn = GRN(4 * dim)
         self.pwconv2 = nn.Linear(4 * dim, dim)
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         if self.has_upsample:

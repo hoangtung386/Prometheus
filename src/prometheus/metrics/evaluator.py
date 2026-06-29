@@ -115,14 +115,16 @@ class SegmentationEvaluator:
         lines = [f"  [{modality_name}] Per-class metrics:", header, sep]
         for c in range(self.num_classes):
             name = self.class_names[c] if c < len(self.class_names) else f"c{c}"
-            lines.append(self._format_row(
-                name,
-                metrics["dice"][c].item(),
-                metrics["iou"][c].item(),
-                metrics["sensitivity"][c].item(),
-                metrics["specificity"][c].item(),
-                metrics["precision"][c].item(),
-            ))
+            lines.append(
+                self._format_row(
+                    name,
+                    metrics["dice"][c].item(),
+                    metrics["iou"][c].item(),
+                    metrics["sensitivity"][c].item(),
+                    metrics["specificity"][c].item(),
+                    metrics["precision"][c].item(),
+                )
+            )
         lines.append(sep)
         fg_dice = self._nanmean(metrics["dice"][1:]).item() if self.num_classes > 1 else 0.0
         fg_iou = self._nanmean(metrics["iou"][1:]).item() if self.num_classes > 1 else 0.0
@@ -144,8 +146,10 @@ class SegmentationEvaluator:
             log[f"{modality_name}/Prec/{name}"] = metrics["precision"][c].item()
             log[f"{modality_name}/Support/target/{name}"] = metrics["target_count"][c].item()
             log[f"{modality_name}/Support/pred/{name}"] = metrics["pred_count"][c].item()
-        log[f"{modality_name}/Dice/mean_present_fg"] = self._nanmean(metrics["dice"][1:]).item() if self.num_classes > 1 else 0.0
-        log[f"{modality_name}/IoU/mean_present_fg"] = self._nanmean(metrics["iou"][1:]).item() if self.num_classes > 1 else 0.0
+        foreground_dice = self._nanmean(metrics["dice"][1:]).item() if self.num_classes > 1 else 0.0
+        foreground_iou = self._nanmean(metrics["iou"][1:]).item() if self.num_classes > 1 else 0.0
+        log[f"{modality_name}/Dice/mean_present_fg"] = foreground_dice
+        log[f"{modality_name}/IoU/mean_present_fg"] = foreground_iou
         log[f"{modality_name}/Dice/mean_present_all"] = self._nanmean(metrics["dice"]).item()
         log[f"{modality_name}/IoU/mean_present_all"] = self._nanmean(metrics["iou"]).item()
         return log

@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class BCEWithLogitsLoss(nn.Module):
-    def __init__(self, pos_weight: Optional[torch.Tensor] = None) -> None:
+    def __init__(self, pos_weight: torch.Tensor | None = None) -> None:
         super().__init__()
         self.pos_weight = pos_weight
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        return F.binary_cross_entropy_with_logits(
-            logits, targets, pos_weight=self.pos_weight
-        )
+        return F.binary_cross_entropy_with_logits(logits, targets, pos_weight=self.pos_weight)
 
 
 class DiceLoss(nn.Module):
@@ -29,7 +25,7 @@ class DiceLoss(nn.Module):
         targets = targets.contiguous().view(targets.size(0), -1)
         intersection = (probs * targets).sum(dim=1)
         cardinality = probs.sum(dim=1) + targets.sum(dim=1)
-        dice = (2. * intersection + self.smooth) / (cardinality + self.smooth)
+        dice = (2.0 * intersection + self.smooth) / (cardinality + self.smooth)
         return 1 - dice.mean()
 
 
@@ -72,7 +68,7 @@ class MultiClassDiceLoss(nn.Module):
         smooth: float = 1e-6,
         include_background: bool = False,
         ignore_absent: bool = True,
-        class_weights: Optional[torch.Tensor] = None,
+        class_weights: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.smooth = smooth
@@ -90,7 +86,7 @@ class MultiClassDiceLoss(nn.Module):
         dims = (0, 2, 3)
         intersection = (probs * targets_one_hot).sum(dim=dims)
         cardinality = probs.sum(dim=dims) + targets_one_hot.sum(dim=dims)
-        dice = (2. * intersection + self.smooth) / (cardinality + self.smooth)
+        dice = (2.0 * intersection + self.smooth) / (cardinality + self.smooth)
         loss = 1 - dice
 
         valid = torch.ones(num_classes, dtype=torch.bool, device=logits.device)
@@ -133,7 +129,7 @@ class MulticlassCombinedLoss(nn.Module):
         self,
         ce_weight: float = 1.0,
         dice_weight: float = 1.0,
-        class_weights: Optional[torch.Tensor] = None,
+        class_weights: torch.Tensor | None = None,
         smooth: float = 1e-6,
         include_background_dice: bool = False,
         ignore_absent_dice: bool = True,

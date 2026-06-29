@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 import torch.nn as nn
 
@@ -11,9 +9,15 @@ from .moe import SparseMoE
 
 class EncoderTransformerBlock(nn.Module):
     def __init__(
-        self, d_model: int, n_heads: int, d_ff: int,
-        d_expert: int = 256, num_experts: int = 512, top_k: int = 8,
-        window_size: int = 4, dropout: float = 0.1,
+        self,
+        d_model: int,
+        n_heads: int,
+        d_ff: int,
+        d_expert: int = 256,
+        num_experts: int = 512,
+        top_k: int = 8,
+        window_size: int = 4,
+        dropout: float = 0.1,
     ) -> None:
         super().__init__()
         self.self_attn = LocalGlobalAttention(d_model, n_heads, window_size)
@@ -24,8 +28,10 @@ class EncoderTransformerBlock(nn.Module):
         )
         self.cross_attn = LocalGlobalAttention(d_model, n_heads, window_size)
         self.moe = SparseMoE(
-            d_model=d_model, d_expert=d_expert,
-            num_experts=num_experts, top_k=top_k,
+            d_model=d_model,
+            d_expert=d_expert,
+            num_experts=num_experts,
+            top_k=top_k,
         )
 
         self.norm1 = nn.LayerNorm(d_model)
@@ -39,7 +45,9 @@ class EncoderTransformerBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(
-        self, x: torch.Tensor, context: Optional[torch.Tensor] = None,
+        self,
+        x: torch.Tensor,
+        context: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         x = x + self.dropout(self.norm2(self.self_attn(self.norm1(x))))
         x = x + self.dropout(self.norm4(self.ffn(self.norm3(x))))
@@ -51,21 +59,38 @@ class EncoderTransformerBlock(nn.Module):
 
 class EncoderTransformerStack(nn.Module):
     def __init__(
-        self, num_blocks: int, d_model: int, n_heads: int, d_ff: int,
-        d_expert: int = 256, num_experts: int = 512, top_k: int = 8,
-        window_size: int = 4, dropout: float = 0.1,
+        self,
+        num_blocks: int,
+        d_model: int,
+        n_heads: int,
+        d_ff: int,
+        d_expert: int = 256,
+        num_experts: int = 512,
+        top_k: int = 8,
+        window_size: int = 4,
+        dropout: float = 0.1,
     ) -> None:
         super().__init__()
-        self.blocks = nn.ModuleList([
-            EncoderTransformerBlock(
-                d_model, n_heads, d_ff,
-                d_expert, num_experts, top_k, window_size, dropout,
-            )
-            for _ in range(num_blocks)
-        ])
+        self.blocks = nn.ModuleList(
+            [
+                EncoderTransformerBlock(
+                    d_model,
+                    n_heads,
+                    d_ff,
+                    d_expert,
+                    num_experts,
+                    top_k,
+                    window_size,
+                    dropout,
+                )
+                for _ in range(num_blocks)
+            ]
+        )
 
     def forward(
-        self, x: torch.Tensor, context: Optional[torch.Tensor] = None,
+        self,
+        x: torch.Tensor,
+        context: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         total_loss = 0.0
         for block in self.blocks:
