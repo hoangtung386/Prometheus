@@ -97,6 +97,31 @@ Registered as `"legacy_dual_unet"`, exported as `DualUNet`.
 
 **YOLO is NOT implemented within Prometheus.** `YoloNucleiDetector` (`models/nuclei/yolo_adapter.py`) is a thin **inference-only adapter** that wraps a pre-trained `ultralytics.YOLO` model:
 
+```mermaid
+graph LR
+    subgraph External["External (not in Prometheus)"]
+        Pretrained["Pre-trained YOLO weights.pt"]
+    end
+
+    subgraph Prometheus["Prometheus codebase"]
+        Adapter["YoloNucleiDetector(model_or_weights)<br/>models/nuclei/yolo_adapter.py"]
+        Input["images: torch.Tensor"] --> Adapter
+        Pretrained -. "loads weights" .-> Adapter
+        Adapter --> Predict["predict()<br/>→ ultralytics.YOLO.predict()"]
+        Predict --> Results["list[Detection]<br/>(centroid, label, confidence, box_xyxy)"]
+    end
+
+    subgraph NotBuilt["Not built"]
+        Note1["✗ No training loop"]
+        Note2["✗ No YOLO loss"]
+        Note3["✗ No dataset collator"]
+        Note4["✗ Not in model registry"]
+        Note5["✗ Not usable via PredictionPipeline"]
+    end
+
+    Predict -.-> Note1
+```
+
 - Constructor loads external weights via `ultralytics.YOLO(weights)`.
 - `predict(images)` runs inference and converts outputs to `Detection` dataclasses (centroid, label, confidence, box).
 - **Not registered** in the model registry.
@@ -144,6 +169,9 @@ graph TD
     TissueDS --> DL["create_puma_dataloaders()<br/>train/val DataLoaders<br/>+ stratified splits"]
     NucDS --> DetDL["collate_detection()<br/>→ detection DataLoader"]
     LegacyDS --> DL
+
+    NucDS -. "future" .-> YOLO["YoloNucleiDetector<br/>(inference-only adapter)"]
+    YOLO -. "needs training loop" .-> Backlog["BACKLOG: YOLO training"]
 ```
 
 **Transforms:**
@@ -166,8 +194,16 @@ graph TD
 
 ```mermaid
 graph LR
-    Pred["predictions<br/>list[Detection]"] --> Match["match_detections(radius_px=15.0)"]
-    Target["targets<br/>list[Detection]"] --> Match
+    subgraph Models["Prediction sources"]
+        DL["DualUNet nuclei head<br/>semantic_logits_to_detections()"]
+        YOLO["YoloNucleiDetector<br/>(inference adapter)"]
+    end
+
+    DL --> Pred["predictions<br/>list[Detection]"]
+    YOLO --> Pred
+
+    Target["targets<br/>list[Detection]"] --> Match["match_detections(radius_px=15.0)"]
+    Pred --> Match
 
     Match --> Result["MatchResult<br/>(matches, unmatched_pred, unmatched_target)"]
     Result --> Metrics["nuclei_detection_metrics()"]
@@ -191,16 +227,19 @@ graph LR
    - `cv2.connectedComponentsWithStats` per foreground class → centroid, mean probability.
    - Returns `list[list[Detection]]`.
 
+`YoloNucleiDetector` bypasses the pipeline entirely — call `.predict(images)` directly for a `list[list[Detection]]` from an external YOLO model.
+
 ---
 
 ## Model registry
 
 `create_model(name, config)` (`models/registry.py`) — two registered factories:
 
-| Name | Class |
-|---|---|
-| `"tissue_convnext_unet"` | `UNetTissue(config)` |
-| `"legacy_dual_unet"` | `DualUNet(config)` |
+| Name | Class | Status |
+|---|---|---|
+| `"tissue_convnext_unet"` | `UNetTissue(config)` | ✅ Working |
+| `"legacy_dual_unet"` | `DualUNet(config)` | ✅ Working |
+| `"yolo_nuclei"` | — | ❌ Not registered (inference adapter only) |
 
 ---
 
