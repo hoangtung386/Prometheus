@@ -279,6 +279,4 @@ Existing imports under `prometheus.blocks`, `prometheus.utils`,
 the migration window. New code should use task model namespaces,
 `prometheus.blocks` for reusable neural layers and `prometheus.data.puma`.
 
-See [REFACTORING_GUIDE.md](../REFACTORING_GUIDE.md) for the complete file map,
-migration phases and definition of done. _(Removed — refer to `docs/architecture.md`,
-`README.md` and git history instead.)_
+Refer to `README.md` and git history for the migration log.
