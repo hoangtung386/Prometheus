@@ -1,6 +1,6 @@
 import torch
 
-from prometheus.utils import LayerNorm, GRN
+from prometheus.utils import GRN, LayerNorm
 
 
 def test_layer_norm_channels_last() -> None:

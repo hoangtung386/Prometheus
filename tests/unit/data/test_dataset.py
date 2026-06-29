@@ -8,10 +8,10 @@ import numpy as np
 import torch
 
 from prometheus.data.puma_dataset import (
-    NUCLEI_CLASSES,
     NUCLEI_CLASS_TO_IDX,
-    TISSUE_CLASSES,
+    NUCLEI_CLASSES,
     TISSUE_CLASS_TO_IDX,
+    TISSUE_CLASSES,
     PUMADataset,
     create_puma_dataloaders,
     geojson_to_mask,
@@ -25,11 +25,13 @@ def _make_dummy_geojson(path: Path, modality: str = "tissue") -> None:
     for class_name, idx in class_map.items():
         if idx == 0:
             continue
-        features.append({
-            "type": "Feature",
-            "properties": {"label": class_name.replace("_", " ").title()},
-            "geometry": {"type": "Polygon", "coordinates": [coords]},
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"label": class_name.replace("_", " ").title()},
+                "geometry": {"type": "Polygon", "coordinates": [coords]},
+            }
+        )
     with open(path, "w") as f:
         json.dump({"type": "FeatureCollection", "features": features}, f)
 
@@ -81,6 +83,7 @@ def test_puma_dataset_returns_class_index() -> None:
         img_path = root / "images" / "dummy.tif"
         np_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
         import tifffile
+
         tifffile.imwrite(str(img_path), np_img)
         _make_dummy_geojson(root / "geojson_tissue" / "dummy_tissue.geojson", "tissue")
         _make_dummy_geojson(root / "geojson_nuclei" / "dummy_nuclei.geojson", "nuclei")

@@ -7,8 +7,8 @@ from prometheus.losses import (
     CombinedLoss,
     DiceLoss,
     FocalLoss,
-    MultiClassDiceLoss,
     MulticlassCombinedLoss,
+    MultiClassDiceLoss,
     TverskyLoss,
 )
 

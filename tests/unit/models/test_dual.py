@@ -56,8 +56,7 @@ def test_dual_unet_stop_gradient() -> None:
     loss = nuclei_mask.sum() + moe_loss
     loss.backward()
     tissue_decoder_grad = any(
-        p.grad is not None and p.grad.abs().sum() > 0
-        for n, p in model.tissue_decoder.named_parameters()
+        p.grad is not None and p.grad.abs().sum() > 0 for n, p in model.tissue_decoder.named_parameters()
     )
     assert not tissue_decoder_grad, "Tissue decoder should NOT get grad from nuclei loss (stop_gradient)"
 
@@ -75,10 +74,7 @@ def test_dual_unet_stop_gradient() -> None:
         ("nuclei_decoder", model.nuclei_decoder),
     ]
     for name, module in checks:
-        has_grad = any(
-            p.grad is not None and p.grad.abs().sum() > 0
-            for p in module.parameters()
-        )
+        has_grad = any(p.grad is not None and p.grad.abs().sum() > 0 for p in module.parameters())
         assert has_grad, f"No gradient found in {name}"
 
 
@@ -92,9 +88,12 @@ def test_dual_unet_default_config() -> None:
 
 def test_dual_unet_transformer_context() -> None:
     cfg = ModelConfig(
-        in_chans=3, num_tissue_classes=6, num_nuclei_classes=11,
+        in_chans=3,
+        num_tissue_classes=6,
+        num_nuclei_classes=11,
         num_transformer_blocks=2,
-        num_experts=8, moe_top_k=2,
+        num_experts=8,
+        moe_top_k=2,
     )
     model = DualUNet(config=cfg)
     x = torch.randn(2, 3, 128, 128)

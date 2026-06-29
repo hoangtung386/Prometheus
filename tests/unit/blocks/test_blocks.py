@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from prometheus.blocks import (
     ConvNeXtBlock,
@@ -58,11 +58,13 @@ def test_decoder_block_interpolation() -> None:
 
 
 def test_forward_decoder_rejects_skip_depth_mismatch() -> None:
-    levels = torch.nn.ModuleList([
-        torch.nn.ModuleList([DecoderBlock(dim=64, has_upsample=True, in_dim=128)]),
-        torch.nn.ModuleList([DecoderBlock(dim=32, has_upsample=True, in_dim=64)]),
-        torch.nn.ModuleList([DecoderBlock(dim=16, has_upsample=True, in_dim=32)]),
-    ])
+    levels = torch.nn.ModuleList(
+        [
+            torch.nn.ModuleList([DecoderBlock(dim=64, has_upsample=True, in_dim=128)]),
+            torch.nn.ModuleList([DecoderBlock(dim=32, has_upsample=True, in_dim=64)]),
+            torch.nn.ModuleList([DecoderBlock(dim=16, has_upsample=True, in_dim=32)]),
+        ]
+    )
     output_head = torch.nn.Identity()
     x = torch.randn(1, 128, 8, 8)
     skips = [
@@ -76,8 +78,13 @@ def test_forward_decoder_rejects_skip_depth_mismatch() -> None:
 
 def test_encoder_transformer_block_self_attn_only() -> None:
     block = EncoderTransformerBlock(
-        d_model=128, n_heads=4, d_ff=512,
-        d_expert=32, num_experts=4, top_k=2, window_size=8,
+        d_model=128,
+        n_heads=4,
+        d_ff=512,
+        d_expert=32,
+        num_experts=4,
+        top_k=2,
+        window_size=8,
     )
     x = torch.randn(2, 64, 128)
     out, moe_loss = block(x)
@@ -87,8 +94,13 @@ def test_encoder_transformer_block_self_attn_only() -> None:
 
 def test_encoder_transformer_block_cross_attn() -> None:
     block = EncoderTransformerBlock(
-        d_model=128, n_heads=4, d_ff=512,
-        d_expert=32, num_experts=4, top_k=2, window_size=8,
+        d_model=128,
+        n_heads=4,
+        d_ff=512,
+        d_expert=32,
+        num_experts=4,
+        top_k=2,
+        window_size=8,
     )
     x = torch.randn(2, 64, 128)
     context = torch.randn(2, 64, 128)
@@ -99,8 +111,13 @@ def test_encoder_transformer_block_cross_attn() -> None:
 def test_encoder_transformer_stack() -> None:
     stack = EncoderTransformerStack(
         num_blocks=3,
-        d_model=64, n_heads=4, d_ff=256,
-        d_expert=16, num_experts=4, top_k=2, window_size=8,
+        d_model=64,
+        n_heads=4,
+        d_ff=256,
+        d_expert=16,
+        num_experts=4,
+        top_k=2,
+        window_size=8,
     )
     x = torch.randn(2, 64, 64)
     context = torch.randn(2, 64, 64)
@@ -111,8 +128,13 @@ def test_encoder_transformer_stack() -> None:
 
 def test_transformer_gradient_flow() -> None:
     block = EncoderTransformerBlock(
-        d_model=64, n_heads=4, d_ff=256,
-        d_expert=16, num_experts=4, top_k=2, window_size=8,
+        d_model=64,
+        n_heads=4,
+        d_ff=256,
+        d_expert=16,
+        num_experts=4,
+        top_k=2,
+        window_size=8,
     )
     x = torch.randn(2, 16, 64, requires_grad=True)
     out, loss = block(x)
