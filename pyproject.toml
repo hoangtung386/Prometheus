@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prometheus"
-version = "0.2.0"
-description = "Medical image segmentation with U-Net + Transformer + Mixture of Experts"
+version = "0.3.0"
+description = "Research framework for tissue segmentation and nuclei detection on PUMA"
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.0.0",
@@ -13,7 +13,36 @@ dependencies = [
     "numpy>=1.24.0",
     "opencv-python-headless>=4.8.0",
     "tifffile>=2023.0.0",
+    "tomli>=2.0.0; python_version < '3.11'",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5.0",
+]
+viz = ["matplotlib>=3.7"]
+yolo = ["ultralytics>=8.0"]
+
+[project.scripts]
+prometheus = "prometheus.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "integration: integration tests",
+    "slow: slow tests",
+    "gpu: tests requiring CUDA",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
