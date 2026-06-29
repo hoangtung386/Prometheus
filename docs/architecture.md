@@ -3,8 +3,11 @@
 Prometheus uses dependency-oriented layers rather than organizing code around
 individual experiments:
 
-```text
-domain <- data/models/metrics <- training/inference <- CLI/submission
+```mermaid
+graph LR
+    Domain[domain] --> Data[data / models / metrics]
+    Data --> Training[training / inference]
+    Training --> CLI[CLI / submission]
 ```
 
 ## Package layers
@@ -30,21 +33,19 @@ domain <- data/models/metrics <- training/inference <- CLI/submission
 
 The primary tissue-segmentation model. A **pure ConvNeXt-V2 U-Net**:
 
-```text
-Image (3, H, W)
-  │
-  └─ Stem: Conv2d(3→96, k=4, s=4) + LayerNorm
-  │
-  ├─ Stage 1: ConvNeXtBlock ×3   dim=96   ↓2× downsample
-  ├─ Stage 2: ConvNeXtBlock ×3   dim=192  ↓4×
-  ├─ Stage 3: ConvNeXtBlock ×9   dim=384  ↓8×
-  └─ Stage 4: ConvNeXtBlock ×3   dim=768  ↓16×
-       │
-       └─ Decoder (3 levels via DecoderBlock): upsampling + skip concat
-             │
-             └─ Output head: ConvTranspose2d(k=4,s=4) + Conv2d(→num_tissue_classes)
-                    │
-                    Tissue mask (C, H, W)
+```mermaid
+graph TD
+    Input["Image (3, H, W)"] --> Stem["Conv2d(3→96, k=4, s=4) + LayerNorm"]
+    Stem --> S1["Stage 1: ConvNeXtBlock ×3<br/>dim=96  &nbsp;↓2×"]
+    S1 --> S2["Stage 2: ConvNeXtBlock ×3<br/>dim=192 &nbsp;↓4×"]
+    S2 --> S3["Stage 3: ConvNeXtBlock ×9<br/>dim=384 &nbsp;↓8×"]
+    S3 --> S4["Stage 4: ConvNeXtBlock ×3<br/>dim=768 &nbsp;↓16×"]
+    S4 --> Dec["Decoder (3 levels DecoderBlock)<br/>upsample + skip concat"]
+    S3 -. "skip" .-> Dec
+    S2 -. "skip" .-> Dec
+    S1 -. "skip" .-> Dec
+    Dec --> Head["Output head<br/>ConvTranspose2d(k=4,s=4) + Conv2d(→C)"]
+    Head --> Out["Tissue mask (C, H, W)"]
 ```
 
 Each `ConvNeXtBlock`: DWConv 7×7 → LayerNorm → Linear(×4) → GELU → GRN → Linear(÷4) → residual + DropPath
@@ -55,26 +56,35 @@ Registered as `"tissue_convnext_unet"`, exported as `UNetTissue`.
 
 Legacy dual-stream model for simultaneous tissue + nuclei segmentation. **Not the target nuclei architecture** (kept for checkpoint compatibility):
 
-```text
- Image (3, H, W)
-   │
-   ├── Tissue Stream ────────────────────────────────────────
-   │   ConvNeXt Encoder → Decoder
-   │   Output: tissue_mask (6, H, W) + full-res feature map (detached via .detach())
-   │
-   ├── Tissue→Nuclei Bridge
-   │   TissueAttentionEncoder: downsamples detached feature map → flattened sequence
-   │
-   └── Nuclei Stream
-       ConvNeXt Encoder → EncoderTransformerStack (6 blocks) → Decoder
-       │
-       Each transformer block:
-         Self-Attn (LocalGlobalAttention, half heads local windowed,
-                    half heads global full-sequence)
-         → FFN → Cross-Attn (on tissue context) → SparseMoE (16 experts, top-2 gating)
-         (all with Pre-LN + residual + dropout)
-       │
-       Output: nuclei_mask (11, H, W) + moe_auxiliary_loss
+```mermaid
+graph TD
+    Input["Image (3, H, W)"] --> TissueEnc["ConvNeXt Encoder"]
+    Input --> NucEnc["ConvNeXt Encoder"]
+
+    subgraph Tissue["Tissue Stream"]
+        TissueEnc --> TissueDec["Decoder"]
+        TissueDec --> TMask["tissue_mask (6, H, W)"]
+        TissueDec --> FeatMap["full-res feature map"]
+    end
+
+    subgraph Bridge["Tissue→Nuclei Bridge"]
+        FeatMap -. "detach()" .-> TAE["TissueAttentionEncoder<br/>downsample → flatten"]
+    end
+
+    subgraph Nuclei["Nuclei Stream"]
+        NucEnc --> XFMR["EncoderTransformerStack (6 blocks)"]
+        TAE -. "cross-attn context" .-> XFMR
+        XFMR --> NucDec["Decoder"]
+        NucDec --> NMask["nuclei_mask (11, H, W)"]
+        XFMR --> MoELoss["moe_auxiliary_loss"]
+    end
+
+    subgraph TransformerBlock["Each transformer block"]
+        direction TB
+        SA["Self-Attn<br/>LocalGlobalAttention<br/>½ heads local · ½ heads global"] --> FFN["FFN"]
+        FFN --> CA["Cross-Attn<br/>(on tissue context)"]
+        CA --> MoE["SparseMoE<br/>16 experts · top-2 gating"]
+    end
 ```
 
 **Forward output:** 3-tuple `(tissue_logits, nuclei_logits, moe_loss)`.
@@ -116,22 +126,24 @@ YOLO training is explicitly documented as **backlog** (see `README.md` and `REFA
 
 ## Data pipeline
 
-```text
-PUMA dataset directory
-  │
-  └─ discover_puma_samples(root) — scans images/ + geojson_tissue/ + geojson_nuclei/
-       │
-       ├─ parse_tissue_geojson(path)  → list[(TissueClass, polygon)]
-       ├─ parse_nuclei_geojson(path)  → list[NucleusInstance] (polygon, centroid, box)
-       │
-       ├─ rasterize_regions(...)      → mask (H, W) class indices
-       ├─ rasterize_instances(...)    → instance mask
-       │
-       ├─ PumaTissueDataset           → (image, mask) for training UNetTissue
-       ├─ PumaNucleiDataset           → (image, dict) for detection model training
-       └─ PUMADataset (legacy)        → (image, {tissue, nuclei}) for DualUNet
-            │
-            └─ create_puma_dataloaders() → train/val DataLoaders + stratified splits
+```mermaid
+graph TD
+    Root["PUMA dataset directory"] --> Disc["discover_puma_samples(root)"]
+
+    Disc --> TissueGJ["parse_tissue_geojson(path)<br/>→ list(TissueClass, polygon)"]
+    Disc --> NucGJ["parse_nuclei_geojson(path)<br/>→ list(NucleusInstance)"]
+
+    TissueGJ --> RastReg["rasterize_regions()<br/>→ mask (H, W) class indices"]
+    NucGJ --> RastInst["rasterize_instances()<br/>→ instance mask"]
+
+    RastReg --> TissueDS["PumaTissueDataset<br/>→ (image, mask) for UNetTissue"]
+    NucGJ --> NucDS["PumaNucleiDataset<br/>→ (image, dict) for detection models"]
+    RastReg --> LegacyDS["PUMADataset (legacy)<br/>→ (image, {tissue,nuclei}) for DualUNet"]
+    RastInst --> LegacyDS
+
+    TissueDS --> DL["create_puma_dataloaders()<br/>train/val DataLoaders<br/>+ stratified splits"]
+    NucDS --> DetDL["collate_detection()<br/>→ detection DataLoader"]
+    LegacyDS --> DL
 ```
 
 **Transforms:**
@@ -152,18 +164,17 @@ PUMA dataset directory
 
 ### Nuclei — instance detection
 
-```text
-predictions: list[Detection]      targets: list[Detection]
-         │                                │
-         └────── match_detections(radius_px=15.0, require_class_match=True) ──────┘
-                        │
-          MatchResult(matches, unmatched_pred, unmatched_target)
-                        │
-              nuclei_detection_metrics()
-                        │
-            Per-class precision, recall, F1
-            macro_f1_summed (mean per-class F1)
-            macro_f1_per_image (mean image-level macro F1)
+```mermaid
+graph LR
+    Pred["predictions<br/>list[Detection]"] --> Match["match_detections(radius_px=15.0)"]
+    Target["targets<br/>list[Detection]"] --> Match
+
+    Match --> Result["MatchResult<br/>(matches, unmatched_pred, unmatched_target)"]
+    Result --> Metrics["nuclei_detection_metrics()"]
+
+    Metrics --> F1["Per-class precision, recall, F1"]
+    Metrics --> F1sum["macro_f1_summed<br/>(mean per-class F1)"]
+    Metrics --> F1img["macro_f1_per_image<br/>(mean image-level macro F1)"]
 ```
 
 `match_detections` implements PUMA-official centroid matching: for each target, finds the best unused prediction within 15 pixels that matches the class. Tie-breaking by highest confidence, then nearest distance.
