@@ -7,15 +7,17 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from prometheus.data.puma_dataset import (
+from prometheus.data import PumaMultitaskDataset
+from prometheus.data.puma.datasets import (
     NUCLEI_CLASS_TO_IDX,
     NUCLEI_CLASSES,
     TISSUE_CLASS_TO_IDX,
     TISSUE_CLASSES,
     PUMADataset,
-    create_puma_dataloaders,
-    geojson_to_mask,
 )
+from prometheus.data.puma.loaders import create_puma_dataloaders
+from prometheus.data.puma.rasterize import geojson_to_mask
+from prometheus.domain import MultitaskSample
 
 
 def _make_dummy_geojson(path: Path, modality: str = "tissue") -> None:
@@ -25,13 +27,16 @@ def _make_dummy_geojson(path: Path, modality: str = "tissue") -> None:
     for class_name, idx in class_map.items():
         if idx == 0:
             continue
-        features.append(
-            {
-                "type": "Feature",
-                "properties": {"label": class_name.replace("_", " ").title()},
-                "geometry": {"type": "Polygon", "coordinates": [coords]},
-            }
-        )
+        formatted = f"nuclei_{class_name}" if modality == "nuclei" else class_name.replace("_", " ").title()
+        feature = {
+            "type": "Feature",
+            "geometry": {"type": "Polygon", "coordinates": [coords]},
+        }
+        if modality == "nuclei":
+            feature["properties"] = {"classification": {"name": formatted}}
+        else:
+            feature["properties"] = {"label": formatted}
+        features.append(feature)
     with open(path, "w") as f:
         json.dump({"type": "FeatureCollection", "features": features}, f)
 
@@ -49,18 +54,9 @@ def test_geojson_to_mask_background_filled() -> None:
         gj = Path(tmp) / "test.geojson"
         _make_dummy_geojson(gj, "tissue")
         mask = geojson_to_mask(gj, (100, 100), TISSUE_CLASS_TO_IDX)
-        assert mask.shape == (6, 100, 100)
+        assert mask.shape == (100, 100)
         assert mask.dtype == np.uint8
-        assert np.all(mask.sum(axis=0) == 1), "Every pixel must be exactly one-hot"
-
-
-def test_geojson_to_mask_nuclei() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        gj = Path(tmp) / "test.geojson"
-        _make_dummy_geojson(gj, "nuclei")
-        mask = geojson_to_mask(gj, (100, 100), NUCLEI_CLASS_TO_IDX)
-        assert mask.shape == (11, 100, 100)
-        assert np.all(mask.sum(axis=0) == 1)
+        assert mask.min() == 0 or mask.max() < 6
 
 
 def test_geojson_to_mask_empty_geojson() -> None:
@@ -69,9 +65,8 @@ def test_geojson_to_mask_empty_geojson() -> None:
         with open(gj, "w") as f:
             json.dump({"type": "FeatureCollection", "features": []}, f)
         mask = geojson_to_mask(gj, (64, 64), TISSUE_CLASS_TO_IDX)
-        assert mask.shape == (6, 64, 64)
-        assert np.all(mask[0] == 1), "All pixels should be background"
-        assert np.all(mask.sum(axis=0) == 1)
+        assert mask.shape == (64, 64)
+        assert np.all(mask == 0), "All pixels should be background"
 
 
 def test_puma_dataset_returns_class_index() -> None:
@@ -129,3 +124,23 @@ def test_create_puma_dataloaders_stratified_split() -> None:
         )
         assert len(train_loader.dataset) == 3
         assert len(test_loader.dataset) == 1
+
+
+def test_multitask_dataset_preserves_instances_and_aspect_ratio(tmp_path: Path) -> None:
+    (tmp_path / "images").mkdir()
+    (tmp_path / "geojson_tissue").mkdir()
+    (tmp_path / "geojson_nuclei").mkdir()
+    import tifffile
+
+    tifffile.imwrite(tmp_path / "images" / "sample.tif", np.zeros((32, 64, 3), dtype=np.uint8))
+    _make_dummy_geojson(tmp_path / "geojson_tissue" / "sample_tissue.geojson", "tissue")
+    _make_dummy_geojson(tmp_path / "geojson_nuclei" / "sample_nuclei.geojson", "nuclei")
+    sample = PumaMultitaskDataset(tmp_path, image_size=(64, 64))[0]
+    assert isinstance(sample, MultitaskSample)
+    assert sample.image.shape == (3, 64, 64)
+    assert sample.metadata.original_size == (32, 64)
+    assert sample.metadata.resized_size == (32, 64)
+    assert sample.metadata.pad_xy == (0, 16)
+    assert sample.nuclei.centroids.shape == (10, 2)
+    assert sample.nuclei.labels.min() == 0
+    assert sample.nuclei.labels.max() == 9

@@ -1,10 +1,12 @@
-from prometheus.config import ModelConfig, TrainingConfig
+from prometheus.legacy.config import ModelConfig, TrainingConfig
 
 
 def test_default_config() -> None:
     cfg = ModelConfig()
     assert cfg.in_chans == 3
-    assert cfg.num_classes == 1
+    assert cfg.num_classes is None
+    assert cfg.num_tissue_classes == 6
+    assert cfg.use_moe is False
     assert cfg.encoder_dims == [96, 192, 384, 768]
     assert cfg.encoder_depths == [3, 3, 9, 3]
     assert cfg.drop_path_rate == 0.1
@@ -12,7 +14,7 @@ def test_default_config() -> None:
     assert cfg.d_ff == 3072
     assert cfg.d_expert == 256
     assert cfg.window_size == 8
-    assert cfg.num_transformer_blocks == 6
+    assert cfg.num_transformer_blocks == 2
     assert cfg.num_experts == 16
     assert cfg.moe_top_k == 2
 

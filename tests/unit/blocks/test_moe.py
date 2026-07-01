@@ -1,6 +1,6 @@
 import torch
 
-from prometheus.blocks import Expert, SparseMoE
+from prometheus.models.experimental import Expert, SparseMoE
 
 
 def test_expert_forward() -> None:

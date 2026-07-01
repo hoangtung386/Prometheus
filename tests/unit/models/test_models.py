@@ -1,14 +1,14 @@
 import torch
 
-from prometheus import UNetTissue
-from prometheus.config import ModelConfig
+from prometheus.legacy import UNetTissue
+from prometheus.legacy.config import ModelConfig
 
 
 def test_unet_tissue_default() -> None:
     model = UNetTissue()
     x = torch.randn(2, 3, 256, 256)
     out = model(x)
-    assert out.shape == (2, 1, 256, 256)
+    assert out.shape == (2, 6, 256, 256)
 
 
 def test_unet_tissue_multi_class() -> None:
@@ -24,7 +24,14 @@ def test_unet_tissue_different_sizes() -> None:
     for size in [128, 256, 512]:
         x = torch.randn(1, 3, size, size)
         out = model(x)
-        assert out.shape == (1, 1, size, size), f"Failed at size {size}"
+        assert out.shape == (1, 6, size, size), f"Failed at size {size}"
+
+
+def test_unet_tissue_preserves_non_stride_aligned_size() -> None:
+    cfg = ModelConfig(encoder_dims=[16, 32, 64, 128], encoder_depths=[1, 1, 1, 1])
+    model = UNetTissue(cfg)
+    out = model(torch.randn(1, 3, 130, 158))
+    assert out.shape == (1, 6, 130, 158)
 
 
 def test_unet_tissue_gradient_flow() -> None:

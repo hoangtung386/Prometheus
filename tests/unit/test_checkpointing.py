@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 
-from prometheus.config import ModelConfig, TrainingConfig
+from prometheus.legacy.config import ModelConfig, TrainingConfig
 from prometheus.training import Trainer, TrainState, load_checkpoint, save_checkpoint
 
 

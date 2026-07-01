@@ -1,7 +1,7 @@
 import torch
 
-from prometheus import DualUNet
-from prometheus.config import ModelConfig
+from prometheus.legacy import DualUNet
+from prometheus.legacy.config import ModelConfig
 
 
 def test_dual_unet_forward() -> None:
@@ -121,3 +121,19 @@ def test_dual_unet_tissue_context_can_be_disabled() -> None:
     t, n, _ = model(x)
     assert t.shape == (1, 6, 128, 128)
     assert n.shape == (1, 11, 128, 128)
+
+
+def test_dual_unet_preserves_rectangular_size() -> None:
+    cfg = ModelConfig(
+        encoder_dims=[16, 32, 64, 128],
+        encoder_depths=[1, 1, 1, 1],
+        n_heads=4,
+        d_ff=256,
+        num_transformer_blocks=1,
+        use_moe=False,
+    )
+    model = DualUNet(cfg)
+    tissue, nuclei, moe_loss = model(torch.randn(1, 3, 130, 158))
+    assert tissue.shape == (1, 6, 130, 158)
+    assert nuclei.shape == (1, 11, 130, 158)
+    assert moe_loss.item() == 0.0

@@ -4,8 +4,9 @@ import numpy as np
 import pytest
 import torch
 
-from prometheus.inference import PredictionPipeline
+from prometheus.inference.pipeline import PredictionPipeline
 from prometheus.io import write_nuclei_json, write_tissue_tiff
+from prometheus.legacy.semantic_postprocess import semantic_targets_to_detections
 from prometheus.submission import validate_submission_outputs
 
 
@@ -24,6 +25,14 @@ def test_prediction_pipeline_converts_semantic_components_to_detections() -> Non
     assert result.tissue_mask.shape == (1, 4, 4)
     assert len(result.nuclei[0]) == 1
     assert result.nuclei[0][0].centroid == (1.5, 1.5)
+
+
+def test_semantic_targets_convert_to_centroid_targets() -> None:
+    targets = torch.zeros(1, 4, 5, dtype=torch.long)
+    targets[0, 1, 2:4] = 1
+    detections = semantic_targets_to_detections(targets)
+    assert len(detections[0]) == 1
+    assert detections[0][0].centroid == (2.5, 1.0)
 
 
 def test_submission_validator_accepts_generated_outputs(tmp_path) -> None:

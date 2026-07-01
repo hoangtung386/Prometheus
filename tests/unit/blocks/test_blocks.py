@@ -1,14 +1,9 @@
 import pytest
 import torch
 
-from prometheus.blocks import (
-    ConvNeXtBlock,
-    DecoderBlock,
-    EncoderTransformerBlock,
-    EncoderTransformerStack,
-    LocalGlobalAttention,
-)
-from prometheus.models._base_unet import forward_decoder
+from prometheus.blocks import ConvNeXtBlock, DecoderBlock
+from prometheus.legacy.base_unet import forward_decoder
+from prometheus.models.experimental import EncoderTransformerBlock, EncoderTransformerStack, LocalGlobalAttention
 
 
 def test_convnext_block() -> None:
@@ -47,6 +42,14 @@ def test_local_global_attention() -> None:
     x = torch.randn(2, 196, 256)
     out = attn(x)
     assert out.shape == (2, 196, 256)
+
+
+def test_local_global_attention_rectangular_2d_windows() -> None:
+    attn = LocalGlobalAttention(d_model=64, n_heads=4, window_size=3)
+    x = torch.randn(2, 35, 64)
+    context = torch.randn(2, 35, 64)
+    out = attn(x, context=context, spatial_size=(5, 7))
+    assert out.shape == x.shape
 
 
 def test_decoder_block_interpolation() -> None:

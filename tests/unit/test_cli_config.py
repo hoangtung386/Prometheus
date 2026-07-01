@@ -1,5 +1,5 @@
 from prometheus.cli.main import build_parser
-from prometheus.config import load_experiment_config
+from prometheus.legacy.config_loader import load_experiment_config
 
 
 def test_cli_exposes_all_workflows() -> None:
