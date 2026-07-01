@@ -10,10 +10,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from ..config import TrainingConfig
 from ..data.puma import NUCLEI_CLASSES, TISSUE_CLASSES
+from ..legacy.config import TrainingConfig
+from ..legacy.semantic_postprocess import semantic_logits_to_detections, semantic_targets_to_detections
 from ..losses import MulticlassCombinedLoss
-from ..metrics import SegmentationEvaluator
+from ..metrics import SegmentationEvaluator, nuclei_detection_metrics
 from .checkpointing import load_checkpoint, save_checkpoint
 from .state import TrainState
 
@@ -212,7 +213,9 @@ def validate(
     device: torch.device,
     eval_t: SegmentationEvaluator | None = None,
     eval_n: SegmentationEvaluator | None = None,
-) -> tuple[float, float, float]:
+    return_nuclei_f1: bool = False,
+    nuclei_radius_px: float = 15.0,
+) -> tuple[float, float, float] | tuple[float, float, float, float]:
     """Run evaluation loop.
 
     Returns (avg_loss, avg_dice_tissue, avg_dice_nuclei).
@@ -221,6 +224,8 @@ def validate(
     model.eval()
     total_loss = 0.0
     dice_tissue, dice_nuclei = [], []
+    nuclei_predictions = []
+    nuclei_targets = []
 
     for images, targets in loader:
         images = images.to(device, non_blocking=True)
@@ -244,6 +249,9 @@ def validate(
                 eval_t.update(pred_t, t_mask)
             if eval_n is not None:
                 eval_n.update(pred_n, n_mask)
+            if return_nuclei_f1:
+                nuclei_predictions.extend(semantic_logits_to_detections(pred_n))
+                nuclei_targets.extend(semantic_targets_to_detections(n_mask))
 
         total_loss += loss.item()
 
@@ -254,6 +262,9 @@ def validate(
         avg_dice_t = 0.0
     if math.isnan(avg_dice_n):
         avg_dice_n = 0.0
+    if return_nuclei_f1:
+        detection = nuclei_detection_metrics(nuclei_predictions, nuclei_targets, radius_px=nuclei_radius_px)
+        return avg_loss, avg_dice_t, avg_dice_n, float(detection["macro_f1_summed"])
     return avg_loss, avg_dice_t, avg_dice_n
 
 
@@ -399,7 +410,7 @@ class Trainer:
                 else None
             )
 
-            test_loss, test_dice_t, test_dice_n = validate(
+            validation = validate(
                 self.model,
                 self.test_loader,
                 self.criterion,
@@ -407,7 +418,13 @@ class Trainer:
                 self.device,
                 eval_t=eval_t,
                 eval_n=eval_n,
+                return_nuclei_f1=self.config.model_type != "UNetTissue",
             )
+            if self.config.model_type == "UNetTissue":
+                test_loss, test_dice_t, test_dice_n = validation
+                test_nuclei_f1 = 0.0
+            else:
+                test_loss, test_dice_t, test_dice_n, test_nuclei_f1 = validation
             log_t = eval_t.log_dict("tissue")
             log_n = eval_n.log_dict("nuclei") if eval_n is not None else {}
             test_dice_t = log_t["tissue/Dice/mean_present_fg"]
@@ -418,6 +435,7 @@ class Trainer:
                 self._writer.add_scalar("Loss/test", test_loss, epoch)
                 self._writer.add_scalar("Dice/tissue", test_dice_t, epoch)
                 self._writer.add_scalar("Dice/nuclei", test_dice_n, epoch)
+                self._writer.add_scalar("F1/nuclei_centroid", test_nuclei_f1, epoch)
                 self._writer.add_scalar("LR", self.optimizer.param_groups[0]["lr"], epoch)
                 for name, val in train_metrics.items():
                     self._writer.add_scalar(f"Loss/train_components/{name}", val, epoch)
@@ -436,16 +454,18 @@ class Trainer:
                 f"Test loss: {test_loss:.4f}  |  LR: {learning_rate:.2e}"
             )
             print(f"  Mean Dice — tissue: {test_dice_t:.4f}  nuclei: {test_dice_n:.4f}")
+            if self.config.model_type != "UNetTissue":
+                print(f"  Centroid proxy macro F1 — nuclei: {test_nuclei_f1:.4f}")
             print(eval_t.summary("Tissue"))
             if eval_n is not None:
                 print(eval_n.summary("Nuclei"))
             print(f"{'=' * 70}\n")
 
-            monitor = test_dice_t + test_dice_n if test_dice_n > 0 else test_dice_t
+            monitor = test_dice_t + test_nuclei_f1 if self.config.model_type != "UNetTissue" else test_dice_t
             if self.config.early_stopping_monitor == "tissue":
                 monitor = test_dice_t
             elif self.config.early_stopping_monitor == "nuclei":
-                monitor = test_dice_n
+                monitor = test_nuclei_f1
             elif self.config.early_stopping_monitor != "combined":
                 raise ValueError("early_stopping_monitor must be one of: combined, tissue, nuclei")
 
@@ -453,11 +473,11 @@ class Trainer:
                 self.best_tissue_dice = test_dice_t
                 self._save_checkpoint(epoch, f"{self.config.model_type}_best_tissue.pth")
                 print(f"  + Saved best tissue (dice_t={test_dice_t:.4f})")
-            if test_dice_n > self.best_nuclei_dice:
-                self.best_nuclei_dice = test_dice_n
+            if test_nuclei_f1 > self.best_nuclei_dice:
+                self.best_nuclei_dice = test_nuclei_f1
                 self._save_checkpoint(epoch, f"{self.config.model_type}_best_nuclei.pth")
                 if self.config.model_type != "UNetTissue":
-                    print(f"  + Saved best nuclei (dice_n={test_dice_n:.4f})")
+                    print(f"  + Saved best nuclei (centroid_f1={test_nuclei_f1:.4f})")
 
             if monitor > self.best_dice:
                 self.best_dice = monitor

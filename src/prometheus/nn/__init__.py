@@ -1,21 +1,16 @@
-"""Canonical neural building blocks — re-exports from blocks for the new target layout."""
+"""Stable low-level neural layers.
 
-from ..blocks import (  # noqa: F401
-    ConvNeXtBlock,
-    DecoderBlock,
-    EncoderTransformerBlock,
-    EncoderTransformerStack,
-    Expert,
-    LocalGlobalAttention,
-    SparseMoE,
-)
+Use :mod:`prometheus.utils` for normalization primitives.
+Experimental attention and MoE modules intentionally live under
+:mod:`prometheus.models.experimental`.
+"""
+
+from ..blocks import ConvNeXtBlock, DecoderBlock
+from ..utils import GRN, LayerNorm
 
 __all__ = [
     "ConvNeXtBlock",
     "DecoderBlock",
-    "EncoderTransformerBlock",
-    "EncoderTransformerStack",
-    "Expert",
-    "LocalGlobalAttention",
-    "SparseMoE",
+    "GRN",
+    "LayerNorm",
 ]
