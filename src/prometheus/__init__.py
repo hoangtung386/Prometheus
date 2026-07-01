@@ -1,6 +1,4 @@
-__version__ = "0.3.0"
-
-from importlib import import_module
+__version__ = "0.4.0"
 
 from .losses import (
     BCEWithLogitsLoss,
@@ -12,30 +10,11 @@ from .losses import (
     TverskyLoss,
 )
 from .metrics import SegmentationEvaluator
-from .models.multitask import DualUNet
-from .models.tissue import UNetTissue
-
-_TRAINING_NAMES = {
-    "Trainer",
-    "dice_score",
-    "train_one_epoch",
-    "validate",
-    "warmup_cosine_lr",
-}
-_VIS_NAMES = {"predict_sample", "show_prediction", "visualize_sample"}
-
-
-def __getattr__(name):
-    if name in _TRAINING_NAMES:
-        return getattr(import_module(".training", __name__), name)
-    if name in _VIS_NAMES:
-        return getattr(import_module(".visualization", __name__), name)
-    raise AttributeError(f"module 'prometheus' has no attribute {name!r}")
-
+from .models import MultitaskOutput, PrometheusNet
 
 __all__ = [
-    "DualUNet",
-    "UNetTissue",
+    "PrometheusNet",
+    "MultitaskOutput",
     "SegmentationEvaluator",
     "BCEWithLogitsLoss",
     "DiceLoss",
@@ -44,12 +23,4 @@ __all__ = [
     "MultiClassDiceLoss",
     "MulticlassCombinedLoss",
     "TverskyLoss",
-    "Trainer",
-    "dice_score",
-    "train_one_epoch",
-    "validate",
-    "warmup_cosine_lr",
-    "predict_sample",
-    "show_prediction",
-    "visualize_sample",
 ]

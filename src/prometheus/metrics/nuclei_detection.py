@@ -15,7 +15,7 @@ def _label_value(label) -> str:
 
 def nuclei_detection_metrics(
     predictions: Sequence[Sequence[Detection]],
-    targets: Sequence[Sequence[NucleusInstance]],
+    targets: Sequence[Sequence[NucleusInstance | Detection]],
     radius_px: float = 15.0,
 ) -> dict[str, object]:
     if len(predictions) != len(targets):

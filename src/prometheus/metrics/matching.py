@@ -30,7 +30,7 @@ def _label_value(label) -> str:
 
 def match_detections(
     predictions: Sequence[Detection],
-    targets: Sequence[NucleusInstance],
+    targets: Sequence[NucleusInstance | Detection],
     radius_px: float = 15.0,
     require_class_match: bool = True,
 ) -> MatchResult:
