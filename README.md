@@ -4,8 +4,8 @@ Research framework for the PUMA melanoma histopathology challenge. PrometheusNet
 shares shallow ConvNeXt features, decodes tissue semantically and detects nuclei
 as center-based instances from a high-resolution feature pyramid.
 
-See [architecture](docs/architecture.md) and the approved
-[refactoring guide](REFACTORING_GUIDE.md) before development.
+See [architecture](docs/architecture.md) for design decisions
+and implementation constraints.
 
 ## Current architecture
 
@@ -22,8 +22,9 @@ config       model and training config dataclasses + TOML loader
 cli          audit, train, evaluate and predict commands
 ```
 
-`DualUNet` remains available as a legacy semantic baseline. The production path
-uses `PumaMultitaskDataset`, `PrometheusNet` and exact instance centroid F1.
+`DualUNet`, `UNetTissue` and semantic postprocessing remain available under
+`prometheus.legacy.*` for old experiments. The production path uses
+`PumaMultitaskDataset`, `PrometheusNet` and exact instance centroid F1.
 
 See [architecture](docs/architecture.md) for architectural decisions,
 migration constraints and the remaining research roadmap.
@@ -86,7 +87,7 @@ uv sync --extra dev --extra viz --extra yolo
 Colab-compatible install (within the notebook):
 
 ```bash
-pip install -e .[viz]
+pip install -r requirements.txt
 ```
 
 `pyproject.toml` is the dependency source of truth.
@@ -127,8 +128,9 @@ model = build_model(config)
 trainer = build_trainer(config, model, data)
 ```
 
-Legacy imports (`DualUNet`, `UNetTissue`, `PUMADataset`) are retained only for
-old experiments. New code should use `prometheus.api` and `PrometheusNet`.
+Legacy imports (`prometheus.legacy.DualUNet`, `prometheus.legacy.UNetTissue`)
+are retained only for old experiments. New code should use `prometheus.api`
+and `PrometheusNet`.
 
 ## Quality gates
 

@@ -59,6 +59,6 @@ All points use pixel-space `(x, y)`. Images are resized with preserved aspect ra
 
 ## Legacy
 
-`DualUNet`, semantic nuclei rasterization and connected-component postprocessing remain importable for old experiments, but they live behind compatibility facades and are not used by CLI, Colab or the 0.4 engine.
-
-See [REFACTORING_GUIDE.md](../REFACTORING_GUIDE.md) for migration rationale, ablations and completion criteria.
+`DualUNet`, semantic nuclei rasterization and connected-component postprocessing
+remain importable via `prometheus.legacy.*` for old experiments, but they are
+not used by CLI, Colab or the 0.4 engine.
