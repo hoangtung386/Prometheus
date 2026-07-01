@@ -1,3 +1,5 @@
+from .multitask import LossWeights, PrometheusMultitaskLoss
+from .nuclei import center_focal_loss, nuclei_regression_losses
 from .segmentation import (
     BCEWithLogitsLoss,
     CombinedLoss,
@@ -16,4 +18,8 @@ __all__ = [
     "MultiClassDiceLoss",
     "MulticlassCombinedLoss",
     "TverskyLoss",
+    "LossWeights",
+    "PrometheusMultitaskLoss",
+    "center_focal_loss",
+    "nuclei_regression_losses",
 ]
