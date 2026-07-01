@@ -1,0 +1,55 @@
+"""Small stable composition API shared by CLI and Colab."""
+
+from __future__ import annotations
+
+import torch
+
+from .config import ProjectConfig, load_project_config
+from .data import create_multitask_dataloaders
+from .engine import PrometheusTrainer, assert_checkpoint_compatible, load_engine_checkpoint
+from .inference import PrometheusPredictor
+from .models import PrometheusNet
+
+
+def load_config(path) -> ProjectConfig:
+    return load_project_config(path)
+
+
+def build_datamodule(config: ProjectConfig):
+    return create_multitask_dataloaders(
+        root=config.data.root,
+        image_size=config.data.image_size,
+        batch_size=config.trainer.batch_size,
+        num_workers=config.trainer.num_workers,
+        validation_fraction=config.data.validation_fraction,
+        seed=config.data.split_seed,
+        split_manifest_path=config.data.split_manifest,
+        pin_memory=True,
+        strict_labels=config.data.strict_labels,
+    )
+
+
+def build_model(config: ProjectConfig) -> PrometheusNet:
+    return PrometheusNet(config.model)
+
+
+def build_trainer(config: ProjectConfig, model=None, datamodule=None, device=None) -> PrometheusTrainer:
+    model = model or build_model(config)
+    train_loader, validation_loader = datamodule or build_datamodule(config)
+    return PrometheusTrainer(model, train_loader, validation_loader, config, device)
+
+
+def load_predictor(config: ProjectConfig, checkpoint_path, device=None) -> PrometheusPredictor:
+    device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = build_model(config)
+    checkpoint = load_engine_checkpoint(checkpoint_path, device)
+    assert_checkpoint_compatible(checkpoint, config)
+    model.load_state_dict(checkpoint["model_state"])
+    return PrometheusPredictor(
+        model,
+        device,
+        config.model.nuclei_feature_stride,
+        config.postprocess.confidence_threshold,
+        config.postprocess.max_detections,
+        config.postprocess.local_max_kernel,
+    )
