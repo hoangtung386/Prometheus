@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import random
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Subset
 
+from ..collate import collate_multitask
+from ..transforms.multitask import multitask_train_transform, multitask_validation_transform
 from .datasets import PUMADataset
+from .multitask_dataset import PumaMultitaskDataset
 from .splits import load_or_create_split
+
+
+def _seed_worker(_worker_id: int) -> None:
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def collate_segmentation(batch):
@@ -69,3 +81,50 @@ def create_puma_dataloaders(
         **common,
     )
     return train_loader, validation_loader
+
+
+def create_multitask_dataloaders(
+    root,
+    image_size: tuple[int, int] | int = (1024, 1024),
+    batch_size: int = 4,
+    num_workers: int = 4,
+    validation_fraction: float = 0.1,
+    seed: int = 42,
+    split_manifest_path=None,
+    pin_memory: bool = True,
+    strict_labels: bool = True,
+):
+    """Create instance-aware loaders for the refactored multitask model."""
+    train_dataset = PumaMultitaskDataset(
+        root,
+        image_size,
+        transforms=multitask_train_transform(),
+        strict_labels=strict_labels,
+    )
+    validation_dataset = PumaMultitaskDataset(
+        root,
+        image_size,
+        transforms=multitask_validation_transform(),
+        strict_labels=strict_labels,
+    )
+    train_ids, validation_ids = load_or_create_split(
+        train_dataset.samples,
+        validation_fraction,
+        seed,
+        split_manifest_path,
+    )
+    index_by_id = {sample.sample_id: index for index, sample in enumerate(train_dataset.samples)}
+    train_indices = [index_by_id[sample_id] for sample_id in train_ids]
+    validation_indices = [index_by_id[sample_id] for sample_id in validation_ids]
+    common = {
+        "batch_size": batch_size,
+        "num_workers": num_workers,
+        "collate_fn": collate_multitask,
+        "pin_memory": pin_memory,
+        "worker_init_fn": _seed_worker,
+    }
+    train_generator = torch.Generator().manual_seed(seed)
+    return (
+        DataLoader(Subset(train_dataset, train_indices), shuffle=True, generator=train_generator, **common),
+        DataLoader(Subset(validation_dataset, validation_indices), shuffle=False, **common),
+    )

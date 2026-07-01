@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -41,3 +42,14 @@ def rasterize_instances(
 
 def class_index_to_one_hot(label_mask: np.ndarray, num_classes: int) -> np.ndarray:
     return np.eye(num_classes, dtype=np.uint8)[label_mask].transpose(2, 0, 1)
+
+
+def geojson_to_mask(
+    geojson_path: str | Path,
+    image_size: tuple[int, int],
+    class_map: dict[str, int],
+) -> np.ndarray:
+    from .geojson import parse_tissue_geojson
+
+    regions = [(label, polygon) for label, polygon in parse_tissue_geojson(geojson_path)]
+    return rasterize_regions(regions, image_size, class_map)

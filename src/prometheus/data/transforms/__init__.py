@@ -9,6 +9,16 @@ from .common import (
     RandomGamma,
     RandomGaussianNoise,
 )
+from .multitask import (
+    MultitaskCompose,
+    NormalizeMultitask,
+    RandomHorizontalFlipMultitask,
+    RandomRotate90Multitask,
+    RandomVerticalFlipMultitask,
+    TransformSample,
+    multitask_train_transform,
+    multitask_validation_transform,
+)
 from .segmentation import (
     ElasticDeformation,
     RandomHorizontalFlip,
@@ -44,4 +54,12 @@ __all__ = [
     "test_transform",
     "train_transform",
     "val_transform",
+    "MultitaskCompose",
+    "NormalizeMultitask",
+    "RandomHorizontalFlipMultitask",
+    "RandomRotate90Multitask",
+    "RandomVerticalFlipMultitask",
+    "TransformSample",
+    "multitask_train_transform",
+    "multitask_validation_transform",
 ]
