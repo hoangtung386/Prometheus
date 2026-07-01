@@ -1,3 +1,16 @@
-# Compatibility installer. Runtime and optional dependencies are declared in
-# pyproject.toml, which is the single source of truth.
+# Runtime dependencies for PrometheusNet training & inference on PUMA.
+# Pinned for reproducible notebook/Colab installs.
+# Single source of truth for version bounds: pyproject.toml.
+
+numpy>=1.24.0,<2.0
+torch>=2.0.0
+timm>=0.9.0
+opencv-python-headless>=4.8.0
+tifffile>=2023.0.0
+matplotlib>=3.7                           # --extra viz
+tomli>=2.0.0; python_version < "3.11"
+
+# Install the local package itself (editable, so code edits take effect
+# without reinstall).  Because all runtime deps are already listed above,
+# pip will skip pyproject.toml dependency resolution.
 -e .
