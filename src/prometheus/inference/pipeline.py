@@ -1,4 +1,4 @@
-"""Task-neutral inference pipeline composition."""
+"""Legacy inference pipeline for DualUNet tuple-based output."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch
 
 from ..domain import Detection
-from .postprocess import semantic_logits_to_detections
+from ..legacy.semantic_postprocess import semantic_logits_to_detections
 
 
 @dataclass

@@ -34,3 +34,25 @@ def semantic_logits_to_detections(logits: torch.Tensor) -> list[list[Detection]]
                 )
         batch_detections.append(detections)
     return batch_detections
+
+
+def semantic_targets_to_detections(targets: torch.Tensor) -> list[list[Detection]]:
+    """Convert legacy raster targets to centroid targets for detection metrics."""
+    if targets.ndim != 3:
+        raise ValueError("targets must have shape (B, H, W)")
+    batch_detections = []
+    for class_mask in targets.detach().cpu().numpy():
+        detections = []
+        for class_index, class_name in enumerate(NUCLEI_CLASSES[1:], start=1):
+            count, _, _, centroids = cv2.connectedComponentsWithStats(
+                (class_mask == class_index).astype(np.uint8), connectivity=8
+            )
+            detections.extend(
+                Detection(
+                    centroid=tuple(float(value) for value in centroids[index]),
+                    label=NucleusClass(class_name),
+                )
+                for index in range(1, count)
+            )
+        batch_detections.append(detections)
+    return batch_detections
