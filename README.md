@@ -1,33 +1,29 @@
 # Prometheus
 
-Research framework for the PUMA melanoma histopathology challenge. Prometheus
-separates tissue semantic segmentation, nuclei instance detection, official
-evaluation, inference and submission serialization behind stable contracts.
+Research framework for the PUMA melanoma histopathology challenge. PrometheusNet
+shares shallow ConvNeXt features, decodes tissue semantically and detects nuclei
+as center-based instances from a high-resolution feature pyramid.
 
-See [architecture](docs/architecture.md) before development. The refactored
-foundation is ready for team ownership, but YOLO training, official
-evaluator-container parity and submission Docker validation remain explicit
-backlog items.
+See [architecture](docs/architecture.md) and the approved
+[refactoring guide](REFACTORING_GUIDE.md) before development.
 
 ## Current architecture
 
 ```text
 domain       canonical labels, geometry and framework-neutral types
 data         PUMA discovery, GeoJSON parsing, rasterization and datasets
-models       tissue, nuclei adapters and legacy multitask models
+models       shared backbone, tissue/nuclei heads, fusion and typed outputs
 metrics      segmentation metrics and 15-pixel centroid matching
-training     legacy trainer plus versioned checkpoint services
-inference    model-to-domain prediction pipeline and postprocessing
+engine       typed trainer, exact evaluator and checkpoint schema v2
+inference    center decoding and source-space prediction
 io           PUMA JSON/TIFF serializers
 submission   output structure validation
 config       model and training config dataclasses + TOML loader
 cli          audit, train, evaluate and predict commands
 ```
 
-`DualUNet` remains available as a legacy semantic baseline. New nuclei work
-should use `PumaNucleiDataset` and a detection adapter such as
-`YoloNucleiDetector`; model selection must be based on PUMA centroid F1 rather
-than pixel Dice or detector mAP alone.
+`DualUNet` remains available as a legacy semantic baseline. The production path
+uses `PumaMultitaskDataset`, `PrometheusNet` and exact instance centroid F1.
 
 See [architecture](docs/architecture.md) for architectural decisions,
 migration constraints and the remaining research roadmap.
@@ -40,19 +36,22 @@ prometheus/
 ├── docs/                 design docs
 ├── notebooks/            Colab training notebook
 ├── src/prometheus/
-│   ├── blocks/           reusable neural layers
+│   ├── api.py            stable composition API
+│   ├── blocks/           stable low-level convolutional layers
 │   ├── cli/              CLI entry point
 │   ├── config/           config dataclasses + TOML loader
 │   ├── data/             datasets, transforms, PUMA IO
 │   ├── domain/           canonical labels, geometry, types
-│   ├── inference/        prediction pipeline
+│   ├── engine/           trainer, evaluator and checkpoint schema v2
+│   ├── inference/        center decoder and source-space predictor
 │   ├── io/               PUMA JSON/TIFF serializers
-│   ├── losses/           segmentation loss functions
+│   ├── legacy/           frozen semantic compatibility implementations
+│   ├── losses/           tissue, nuclei and multitask losses
 │   ├── metrics/          evaluation metrics
 │   ├── models/           model architectures + registry
-│   ├── nn/               extra neural ops
+│   ├── nn/               stable neural-layer exports
 │   ├── submission/       output validation
-│   ├── training/         trainer + checkpointing
+│   ├── training/         deprecated trainer compatibility package
 │   ├── utils/            helpers (norm, etc.)
 │   └── visualization/    plotting utilities
 ├── tests/                unit tests
@@ -87,8 +86,7 @@ uv sync --extra dev --extra viz --extra yolo
 Colab-compatible install (within the notebook):
 
 ```bash
-pip install -e .
-pip install tensorboard matplotlib
+pip install -e .[viz]
 ```
 
 `pyproject.toml` is the dependency source of truth.
@@ -103,17 +101,17 @@ The CLI is useful for local runs or batch pipelines. Most users should use
 uv run prometheus audit --data-root /path/to/puma
 
 # Train from a reproducible TOML config
-uv run prometheus train --config configs/experiment/legacy_dual.toml
+uv run prometheus train --config configs/experiment/baseline_multitask.toml
 
 # Evaluate a versioned checkpoint
 uv run prometheus evaluate \
-  --config configs/experiment/legacy_dual.toml \
-  --checkpoint checkpoints/best.pt
+  --config configs/experiment/baseline_multitask.toml \
+  --checkpoint runs/baseline_multitask_v1/best_primary.ckpt
 
 # Produce tissue TIFF and nuclei JSON
 uv run prometheus predict \
-  --config configs/experiment/legacy_dual.toml \
-  --checkpoint checkpoints/best.pt \
+  --config configs/experiment/baseline_multitask.toml \
+  --checkpoint runs/baseline_multitask_v1/best_primary.ckpt \
   --input sample.tif \
   --output predictions/sample
 ```
@@ -121,14 +119,16 @@ uv run prometheus predict \
 ## Python API
 
 ```python
-from prometheus.data import PumaNucleiDataset, PumaTissueDataset
-from prometheus.domain import Detection, NucleusClass
-from prometheus.metrics import nuclei_detection_metrics
-from prometheus.models import create_model
+from prometheus.api import build_datamodule, build_model, build_trainer, load_config
+
+config = load_config("configs/experiment/baseline_multitask.toml")
+data = build_datamodule(config)
+model = build_model(config)
+trainer = build_trainer(config, model, data)
 ```
 
-Legacy imports (`DualUNet`, `UNetTissue`, `PUMADataset`) are retained during the
-migration window to preserve checkpoints and existing callers.
+Legacy imports (`DualUNet`, `UNetTissue`, `PUMADataset`) are retained only for
+old experiments. New code should use `prometheus.api` and `PrometheusNet`.
 
 ## Quality gates
 

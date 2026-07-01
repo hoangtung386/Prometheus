@@ -1,0 +1,63 @@
+[experiment]
+name = "baseline_multitask_v1"
+seed = 42
+
+[model]
+name = "prometheus_multitask_v1"
+in_channels = 3
+num_tissue_classes = 6
+num_nucleus_types = 10
+encoder_dims = [96, 192, 384, 768]
+encoder_depths = [3, 3, 9, 3]
+tissue_decoder_depths = [1, 2, 2]
+drop_path_rate = 0.1
+nuclei_feature_stride = 4
+
+[model.context]
+enabled = true
+
+[data]
+root = "/content/drive/MyDrive/PUMA/dataset_PUMA"
+image_size = 1024
+validation_fraction = 0.1
+split_seed = 42
+strict_labels = true
+split_manifest = "runs/splits/puma.json"
+
+[optimizer]
+lr = 0.0002
+weight_decay = 0.01
+betas = [0.9, 0.999]
+eps = 1e-8
+
+[trainer]
+epochs = 100
+batch_size = 4
+num_workers = 2
+amp = true
+gradient_accumulation = 1
+gradient_clip_norm = 1.0
+warmup_epochs = 10
+min_lr = 0.000001
+log_interval = 10
+
+[loss]
+tissue_ce = 1.0
+tissue_dice = 1.0
+center_focal = 1.0
+nuclei_class = 1.0
+offset = 1.0
+size = 0.1
+
+[evaluation]
+nuclei_radius_px = 15.0
+checkpoint_metric = "nuclei/macro_f1_summed"
+track = "track2"
+
+[paths]
+run_dir = "/content/drive/MyDrive/prometheus_runs/baseline_multitask_v1"
+
+[postprocess]
+confidence_threshold = 0.25
+max_detections = 1000
+local_max_kernel = 3
