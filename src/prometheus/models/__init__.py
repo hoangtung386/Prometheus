@@ -1,23 +1,31 @@
-from ._base_unet import build_decoder, build_encoder, forward_decoder, forward_encoder
-from .registry import create_model, register_model, registered_models
-from .unet_dual import DualUNet, TissueAttentionEncoder, TissueDecoder
-from .unet_tissue import Decoder, Encoder
-from .unet_tissue import UNet as UNetTissue
+"""Production model API — legacy architectures are registered lazily."""
 
-register_model("tissue_convnext_unet", lambda config: UNetTissue(config))
-register_model("legacy_dual_unet", lambda config: DualUNet(config))
+from .contracts import FeaturePyramid, MultitaskOutput
+from .multitask.prometheus_net import PrometheusNet
+from .registry import create_model, register_model, registered_models
+
+
+def _legacy_dual_factory(config):
+    from ..legacy import DualUNet
+
+    return DualUNet(config)
+
+
+def _legacy_tissue_factory(config):
+    from ..legacy import UNetTissue
+
+    return UNetTissue(config)
+
+
+register_model("prometheus_multitask_v1", lambda config: PrometheusNet(config))
+register_model("legacy_dual_unet", _legacy_dual_factory)
+register_model("tissue_convnext_unet", _legacy_tissue_factory)
+
 
 __all__ = [
-    "DualUNet",
-    "UNetTissue",
-    "Encoder",
-    "Decoder",
-    "TissueAttentionEncoder",
-    "TissueDecoder",
-    "build_encoder",
-    "forward_encoder",
-    "build_decoder",
-    "forward_decoder",
+    "FeaturePyramid",
+    "MultitaskOutput",
+    "PrometheusNet",
     "create_model",
     "register_model",
     "registered_models",

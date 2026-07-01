@@ -9,12 +9,20 @@ from ..utils import GRN, LayerNorm
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, dim: int, has_upsample: bool = False, in_dim: int | None = None, drop_path: float = 0.0) -> None:
+    def __init__(
+        self,
+        dim: int,
+        has_upsample: bool = False,
+        in_dim: int | None = None,
+        drop_path: float = 0.0,
+        use_skip: bool = True,
+    ) -> None:
         super().__init__()
         self.has_upsample = has_upsample
+        self.use_skip = use_skip
         if has_upsample:
             self.upsample = nn.ConvTranspose2d(in_dim, dim, kernel_size=2, stride=2)
-        self.skip_proj = nn.Conv2d(2 * dim, dim, kernel_size=1)
+        self.skip_proj = nn.Conv2d(2 * dim, dim, kernel_size=1) if use_skip else nn.Identity()
 
         self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
         self.norm = LayerNorm(dim, eps=1e-6)
@@ -24,13 +32,15 @@ class DecoderBlock(nn.Module):
         self.pwconv2 = nn.Linear(4 * dim, dim)
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
-    def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, skip: torch.Tensor | None = None) -> torch.Tensor:
         if self.has_upsample:
             x = self.upsample(x)
-        if x.shape[-2:] != skip.shape[-2:]:
-            x = F.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
-        x = torch.cat([x, skip], dim=1)
-        x = self.skip_proj(x)
+        if self.use_skip:
+            if skip is None:
+                raise ValueError("Decoder block requires a skip tensor")
+            if x.shape[-2:] != skip.shape[-2:]:
+                x = F.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
+            x = self.skip_proj(torch.cat([x, skip], dim=1))
 
         input = x
         x = self.dwconv(x)

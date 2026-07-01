@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 import torch.nn as nn
 
-from ..config import ModelConfig
+from ..config import PrometheusModelConfig
 
-ModelFactory = Callable[[ModelConfig], nn.Module]
+ModelFactory = Callable[[PrometheusModelConfig], nn.Module]
 _REGISTRY: dict[str, ModelFactory] = {}
 
 
@@ -18,7 +19,7 @@ def register_model(name: str, factory: ModelFactory) -> None:
     _REGISTRY[name] = factory
 
 
-def create_model(name: str, config: ModelConfig) -> nn.Module:
+def create_model(name: str, config: Any) -> nn.Module:
     try:
         factory = _REGISTRY[name]
     except KeyError as error:

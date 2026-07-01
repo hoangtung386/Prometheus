@@ -26,6 +26,12 @@ class SparseMoE(nn.Module):
         capacity_factor: float = 1.25,
     ) -> None:
         super().__init__()
+        if num_experts <= 0:
+            raise ValueError("num_experts must be positive")
+        if top_k <= 0 or top_k > num_experts:
+            raise ValueError("top_k must be in [1, num_experts]")
+        if capacity_factor <= 0:
+            raise ValueError("capacity_factor must be positive")
         self.num_experts = num_experts
         self.top_k = top_k
         self.capacity_factor = capacity_factor
@@ -42,9 +48,7 @@ class SparseMoE(nn.Module):
         topk_indices: torch.Tensor,
     ) -> torch.Tensor:
         N = gate_weights.shape[0]
-        tokens_per_expert = torch.zeros(self.num_experts, device=gate_weights.device)
-        for i in range(self.num_experts):
-            tokens_per_expert[i] = (topk_indices == i).any(dim=-1).float().sum()
+        tokens_per_expert = torch.bincount(topk_indices.reshape(-1), minlength=self.num_experts).float()
         fraction = tokens_per_expert / (N * self.top_k)
         prob = gate_weights.mean(dim=0)
         loss = self.num_experts * (fraction * prob).sum()
@@ -62,15 +66,18 @@ class SparseMoE(nn.Module):
         topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True)
 
         out_down = torch.zeros_like(down)
+        capacity = max(1, int(self.capacity_factor * tokens.shape[0] * self.top_k / self.num_experts))
         for i, expert in enumerate(self.experts):
-            mask = (topk_indices == i).any(dim=-1)
-            if not mask.any():
+            token_idx, route_idx = (topk_indices == i).nonzero(as_tuple=True)
+            if token_idx.numel() == 0:
                 continue
-            idx = mask.nonzero(as_tuple=True)[0]
-            matched = topk_indices[idx] == i
-            k_idx = matched.int().argmax(dim=-1)
-            w = topk_weights[idx, k_idx].unsqueeze(-1)
-            out_down[idx] += w * expert(down[idx])
+            route_weights = topk_weights[token_idx, route_idx]
+            if token_idx.numel() > capacity:
+                keep = route_weights.topk(capacity).indices
+                token_idx = token_idx[keep]
+                route_weights = route_weights[keep]
+            contribution = route_weights.unsqueeze(-1) * expert(down[token_idx])
+            out_down.index_add_(0, token_idx, contribution)
 
         aux_loss = self._load_balancing_loss(gate_weights, topk_indices)
 

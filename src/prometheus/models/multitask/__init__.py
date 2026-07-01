@@ -1,3 +1,5 @@
-from .dual_unet_legacy import DualUNet
+"""Multitask models — legacy :class:`DualUNet` is only loaded on explicit request."""
 
-__all__ = ["DualUNet"]
+from .prometheus_net import PrometheusNet
+
+__all__ = ["PrometheusNet"]
