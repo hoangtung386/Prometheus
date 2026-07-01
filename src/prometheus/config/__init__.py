@@ -1,24 +1,26 @@
-"""Validated configuration schemas."""
+"""Production configuration API — legacy names are loaded only on explicit request."""
 
-from .loader import load_experiment_config
-from .schemas import (
-    DataConfig,
-    EvaluationConfig,
-    ExperimentConfig,
-    ModelConfig,
-    TrainingConfig,
+from .common import DataConfig, EvaluationConfig
+from .loader import load_project_config
+from .project import (
+    EngineConfig,
+    LossConfig,
+    OptimizerConfig,
+    PathsConfig,
+    PostprocessConfig,
+    ProjectConfig,
+    PrometheusModelConfig,
 )
 
-DEFAULT_CONFIG = ModelConfig()
-DEFAULT_TRAINING_CONFIG = TrainingConfig()
-
 __all__ = [
-    "DEFAULT_CONFIG",
-    "DEFAULT_TRAINING_CONFIG",
     "DataConfig",
+    "EngineConfig",
     "EvaluationConfig",
-    "ExperimentConfig",
-    "ModelConfig",
-    "TrainingConfig",
-    "load_experiment_config",
+    "LossConfig",
+    "OptimizerConfig",
+    "PathsConfig",
+    "PostprocessConfig",
+    "ProjectConfig",
+    "PrometheusModelConfig",
+    "load_project_config",
 ]
