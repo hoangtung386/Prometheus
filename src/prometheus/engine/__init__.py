@@ -3,6 +3,7 @@ from .checkpointing import (
     assert_checkpoint_compatible,
     load_engine_checkpoint,
     save_engine_checkpoint,
+    select_inference_state,
 )
 from .evaluator import EvaluationResult, evaluate_multitask
 from .trainer import PrometheusTrainer
@@ -15,4 +16,5 @@ __all__ = [
     "evaluate_multitask",
     "load_engine_checkpoint",
     "save_engine_checkpoint",
+    "select_inference_state",
 ]

@@ -6,10 +6,16 @@ import torch
 
 from .config import ProjectConfig, load_project_config
 from .data import create_multitask_dataloaders
-from .engine import PrometheusTrainer, assert_checkpoint_compatible, load_engine_checkpoint
+from .engine import (
+    PrometheusTrainer,
+    assert_checkpoint_compatible,
+    load_engine_checkpoint,
+    select_inference_state,
+)
 from .inference import PrometheusPredictor
 from .losses import LossWeights, PrometheusMultitaskLoss
 from .models import PrometheusNet
+from .models.backbones import load_pretrained_backbone
 
 
 def load_config(path) -> ProjectConfig:
@@ -30,8 +36,17 @@ def build_datamodule(config: ProjectConfig):
     )
 
 
-def build_model(config: ProjectConfig) -> PrometheusNet:
-    return PrometheusNet(config.model)
+def build_model(config: ProjectConfig, pretrained: bool = False) -> PrometheusNet:
+    """Build PrometheusNet, optionally seeding the encoder with ImageNet weights.
+
+    ``pretrained`` is off by default so CLI/tests stay offline; the training notebook
+    turns it on. It is a build-time choice, not part of the architecture identity, so
+    it does not affect checkpoint compatibility.
+    """
+    model = PrometheusNet(config.model)
+    if pretrained:
+        load_pretrained_backbone(model.backbone, config.model)
+    return model
 
 
 def build_criterion(config: ProjectConfig) -> PrometheusMultitaskLoss:
@@ -57,7 +72,7 @@ def load_predictor(config: ProjectConfig, checkpoint_path, device=None) -> Prome
     model = build_model(config)
     checkpoint = load_engine_checkpoint(checkpoint_path, device)
     assert_checkpoint_compatible(checkpoint, config)
-    model.load_state_dict(checkpoint["model_state"])
+    model.load_state_dict(select_inference_state(checkpoint))
     return PrometheusPredictor(
         model,
         device,

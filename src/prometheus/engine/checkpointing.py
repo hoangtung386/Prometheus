@@ -24,6 +24,7 @@ def save_engine_checkpoint(
     optimizer=None,
     scheduler=None,
     scaler=None,
+    ema_state=None,
 ) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -32,6 +33,7 @@ def save_engine_checkpoint(
         "architecture": "prometheus_multitask_v1",
         "architecture_version": getattr(model, "architecture_version", 1),
         "model_state": model.state_dict(),
+        "ema_state": ema_state,
         "config": asdict(config),
         "epoch": epoch,
         "global_step": global_step,
@@ -61,6 +63,17 @@ def load_engine_checkpoint(path: str | Path, map_location="cpu") -> dict:
     if payload.get("architecture") != "prometheus_multitask_v1":
         raise ValueError(f"Unsupported architecture: {payload.get('architecture')}")
     return payload
+
+
+def select_inference_state(payload: dict) -> dict:
+    """Return EMA weights when the checkpoint stored them, else the raw weights.
+
+    Training keeps ``model_state`` as the live (raw) weights so resume stays exact,
+    and stores the smoothed EMA weights separately. Inference and exact validation
+    should prefer the EMA weights when present because they generalize better.
+    """
+    ema_state = payload.get("ema_state")
+    return ema_state if ema_state is not None else payload["model_state"]
 
 
 def assert_checkpoint_compatible(payload: dict, config: ProjectConfig) -> None:

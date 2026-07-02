@@ -15,7 +15,12 @@ from ..data.puma.multitask_dataset import read_native_image
 from ..data.spatial import letterbox_image
 from ..data.transforms import NormalizeMultitask, TransformSample
 from ..domain import Track
-from ..engine import assert_checkpoint_compatible, evaluate_multitask, load_engine_checkpoint
+from ..engine import (
+    assert_checkpoint_compatible,
+    evaluate_multitask,
+    load_engine_checkpoint,
+    select_inference_state,
+)
 from ..io import write_nuclei_json, write_tissue_tiff
 from ..submission import validate_submission_outputs
 
@@ -40,7 +45,7 @@ def _evaluate(args: argparse.Namespace) -> int:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     checkpoint = load_engine_checkpoint(args.checkpoint, device)
     assert_checkpoint_compatible(checkpoint, config)
-    model.load_state_dict(checkpoint["model_state"])
+    model.load_state_dict(select_inference_state(checkpoint))
     model.to(device)
     result = evaluate_multitask(
         model,

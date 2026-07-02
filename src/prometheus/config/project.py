@@ -59,6 +59,7 @@ class EngineConfig:
     warmup_epochs: int = 5
     min_lr: float = 1e-6
     log_interval: int = 10
+    ema_decay: float = 0.0  # exponential moving average of weights; 0 disables it
 
 
 @dataclass
@@ -113,6 +114,8 @@ class ProjectConfig:
             raise ValueError("warmup_epochs must be between zero and epochs")
         if self.trainer.gradient_accumulation <= 0 or self.trainer.log_interval <= 0:
             raise ValueError("gradient_accumulation and log_interval must be positive")
+        if not 0.0 <= self.trainer.ema_decay < 1.0:
+            raise ValueError("ema_decay must be in [0, 1)")
         if self.trainer.gradient_clip_norm is not None and self.trainer.gradient_clip_norm <= 0:
             raise ValueError("gradient_clip_norm must be positive when provided")
         if not 0 <= self.trainer.min_lr <= self.optimizer.lr:

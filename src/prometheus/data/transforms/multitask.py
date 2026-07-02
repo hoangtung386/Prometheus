@@ -128,6 +128,76 @@ class RandomRotate90Multitask:
         )
 
 
+class _PhotometricMultitask:
+    """Base for image-only transforms: geometry (masks/boxes/points) is untouched.
+
+    Operates on the raw image (CHW float in ``[0, 1]``) and must run before
+    :class:`NormalizeMultitask`. Output is clipped back to ``[0, 1]``.
+    """
+
+    def _apply(self, image: np.ndarray) -> np.ndarray:  # pragma: no cover - overridden
+        raise NotImplementedError
+
+    def __call__(self, sample: TransformSample) -> TransformSample:
+        image = np.clip(self._apply(sample.image.astype(np.float32)), 0.0, 1.0)
+        return TransformSample(image, sample.tissue_mask, sample.centroids, sample.boxes, sample.valid_mask)
+
+
+class RandomStainJitterMultitask(_PhotometricMultitask):
+    """Per-channel gain/bias — a cheap stain-variation proxy for H&E tiles."""
+
+    def __init__(self, scale: float = 0.08, shift: float = 0.03, probability: float = 0.8) -> None:
+        self.scale = scale
+        self.shift = shift
+        self.probability = probability
+
+    def _apply(self, image: np.ndarray) -> np.ndarray:
+        if random.random() >= self.probability:
+            return image
+        shape = (image.shape[0], 1, 1)
+        gains = np.random.uniform(1 - self.scale, 1 + self.scale, size=shape).astype(np.float32)
+        shifts = np.random.uniform(-self.shift, self.shift, size=shape).astype(np.float32)
+        return image * gains + shifts
+
+
+class RandomBrightnessContrastMultitask(_PhotometricMultitask):
+    def __init__(self, brightness: float = 0.1, contrast: float = 0.1, probability: float = 0.5) -> None:
+        self.brightness = brightness
+        self.contrast = contrast
+        self.probability = probability
+
+    def _apply(self, image: np.ndarray) -> np.ndarray:
+        if random.random() >= self.probability:
+            return image
+        brightness = random.uniform(-self.brightness, self.brightness)
+        contrast = 1.0 + random.uniform(-self.contrast, self.contrast)
+        return image * contrast + brightness
+
+
+class RandomGammaMultitask(_PhotometricMultitask):
+    def __init__(self, gamma_range: tuple[float, float] = (0.8, 1.25), probability: float = 0.5) -> None:
+        self.gamma_range = gamma_range
+        self.probability = probability
+
+    def _apply(self, image: np.ndarray) -> np.ndarray:
+        if random.random() >= self.probability:
+            return image
+        gamma = random.uniform(*self.gamma_range)
+        return np.clip(image, 0.0, 1.0) ** gamma
+
+
+class RandomGaussianNoiseMultitask(_PhotometricMultitask):
+    def __init__(self, std: float = 0.01, probability: float = 0.5) -> None:
+        self.std = std
+        self.probability = probability
+
+    def _apply(self, image: np.ndarray) -> np.ndarray:
+        if random.random() >= self.probability:
+            return image
+        noise = np.random.randn(*image.shape).astype(np.float32) * self.std
+        return image + noise
+
+
 class NormalizeMultitask:
     def __call__(self, sample: TransformSample) -> TransformSample:
         image = np.zeros_like(sample.image)
@@ -147,11 +217,18 @@ class NormalizeMultitask:
 
 
 def multitask_train_transform() -> MultitaskCompose:
+    # Geometry augments the labels; the photometric block (stain/brightness/gamma/noise)
+    # only perturbs pixels and runs on the raw [0, 1] image, before normalization.
+    # Color augmentation is the highest-value augment for a small H&E dataset.
     return MultitaskCompose(
         [
             RandomHorizontalFlipMultitask(),
             RandomVerticalFlipMultitask(),
             RandomRotate90Multitask(),
+            RandomStainJitterMultitask(),
+            RandomBrightnessContrastMultitask(),
+            RandomGammaMultitask(),
+            RandomGaussianNoiseMultitask(),
             NormalizeMultitask(),
         ]
     )

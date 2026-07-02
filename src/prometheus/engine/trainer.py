@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import random
@@ -56,11 +57,28 @@ class PrometheusTrainer:
             LossWeights(**{name: getattr(config.loss, name) for name in LossWeights.__dataclass_fields__}),
             gaussian_radius=config.loss.gaussian_radius,
         )
+        self.ema_decay = config.trainer.ema_decay
+        self.ema_model = None
+        if self.ema_decay > 0.0:
+            self.ema_model = copy.deepcopy(self.model)
+            self.ema_model.eval()
+            for parameter in self.ema_model.parameters():
+                parameter.requires_grad_(False)
         self.start_epoch = 0
         self.global_step = 0
         self.best_primary = float("-inf")
         self.best_tissue = float("-inf")
         self.history: list[dict] = []
+
+    @torch.no_grad()
+    def _update_ema(self) -> None:
+        decay = self.ema_decay
+        for ema_parameter, parameter in zip(
+            self.ema_model.parameters(), self.model.parameters(), strict=True
+        ):
+            ema_parameter.mul_(decay).add_(parameter.detach(), alpha=1.0 - decay)
+        for ema_buffer, buffer in zip(self.ema_model.buffers(), self.model.buffers(), strict=True):
+            ema_buffer.copy_(buffer)
 
     def _lr_lambda(self, minimum_ratio: float):
         warmup, epochs = self.config.trainer.warmup_epochs, self.config.trainer.epochs
@@ -96,6 +114,8 @@ class PrometheusTrainer:
                 self.scaler.update()
                 self.optimizer.zero_grad(set_to_none=True)
                 self.global_step += 1
+                if self.ema_model is not None:
+                    self._update_ema()
             for name, value in losses.items():
                 totals[name] = totals.get(name, 0.0) + float(value.detach().item())
             if batch_index % self.config.trainer.log_interval == 0:
@@ -124,8 +144,9 @@ class PrometheusTrainer:
             if self.device.type == "cuda":
                 torch.cuda.reset_peak_memory_stats(self.device)
             train_metrics = self.train_epoch(epoch)
+            evaluation_model = self.ema_model if self.ema_model is not None else self.model
             evaluation = evaluate_multitask(
-                self.model,
+                evaluation_model,
                 self.validation_loader,
                 self.criterion,
                 self.device,
@@ -192,12 +213,15 @@ class PrometheusTrainer:
             self.optimizer,
             self.scheduler,
             self.scaler,
+            ema_state=self.ema_model.state_dict() if self.ema_model is not None else None,
         )
 
     def resume(self, path: str | Path) -> None:
         checkpoint = load_engine_checkpoint(path, self.device)
         assert_checkpoint_compatible(checkpoint, self.config)
         self.model.load_state_dict(checkpoint["model_state"])
+        if self.ema_model is not None and checkpoint.get("ema_state") is not None:
+            self.ema_model.load_state_dict(checkpoint["ema_state"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state"])
         self.scheduler.load_state_dict(checkpoint["scheduler_state"])
         if checkpoint["scaler_state"] is not None:
