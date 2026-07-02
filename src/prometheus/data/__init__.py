@@ -4,6 +4,7 @@ from .puma import (
     PumaNucleiDataset,
     PumaTissueDataset,
     create_multitask_dataloaders,
+    create_multitask_kfold_dataloaders,
     create_puma_dataloaders,
 )
 from .transforms import collate_puma, test_transform, train_transform, val_transform
@@ -15,6 +16,7 @@ __all__ = [
     "PumaTissueDataset",
     "create_puma_dataloaders",
     "create_multitask_dataloaders",
+    "create_multitask_kfold_dataloaders",
     "test_transform",
     "train_transform",
     "val_transform",

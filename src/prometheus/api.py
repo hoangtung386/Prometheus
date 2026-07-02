@@ -5,7 +5,7 @@ from __future__ import annotations
 import torch
 
 from .config import ProjectConfig, load_project_config
-from .data import create_multitask_dataloaders
+from .data import create_multitask_dataloaders, create_multitask_kfold_dataloaders
 from .engine import (
     PrometheusTrainer,
     assert_checkpoint_compatible,
@@ -31,6 +31,27 @@ def build_datamodule(config: ProjectConfig):
         validation_fraction=config.data.validation_fraction,
         seed=config.data.split_seed,
         split_manifest_path=config.data.split_manifest,
+        pin_memory=True,
+        strict_labels=config.data.strict_labels,
+    )
+
+
+def build_kfold_datamodule(
+    config: ProjectConfig,
+    fold_index: int,
+    num_folds: int = 5,
+    kfold_manifest_path=None,
+):
+    """Train/validation loaders for one fold of a k-fold split over the whole dataset."""
+    return create_multitask_kfold_dataloaders(
+        root=config.data.root,
+        image_size=config.data.image_size,
+        batch_size=config.trainer.batch_size,
+        num_workers=config.trainer.num_workers,
+        num_folds=num_folds,
+        fold_index=fold_index,
+        seed=config.data.split_seed,
+        kfold_manifest_path=kfold_manifest_path,
         pin_memory=True,
         strict_labels=config.data.strict_labels,
     )

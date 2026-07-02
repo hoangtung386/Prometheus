@@ -31,6 +31,8 @@ class PrometheusMultitaskLoss(nn.Module):
         output_stride: int = 4,
         weights: LossWeights | None = None,
         gaussian_radius: int = 2,
+        tissue_class_weights: torch.Tensor | None = None,
+        nuclei_class_weights: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         if gaussian_radius < 0:
@@ -39,10 +41,17 @@ class PrometheusMultitaskLoss(nn.Module):
         self.output_stride = output_stride
         self.weights = weights or LossWeights()
         self.gaussian_radius = gaussian_radius
+        # Per-class weights (inverse frequency) counter the majority-class collapse on the
+        # imbalanced PUMA tasks. Registered as buffers so .to(device) relocates them.
         self.tissue = MulticlassCombinedLoss(
             ce_weight=self.weights.tissue_ce,
             dice_weight=self.weights.tissue_dice,
+            class_weights=tissue_class_weights,
         )
+        if nuclei_class_weights is not None:
+            self.register_buffer("nuclei_class_weights", nuclei_class_weights.float())
+        else:
+            self.nuclei_class_weights = None
 
     def forward(self, output: MultitaskOutput, batch: MultitaskBatch) -> dict[str, torch.Tensor]:
         tissue_ce, tissue_dice = self.tissue.components(output.tissue_logits, batch.tissue.mask)
@@ -59,6 +68,7 @@ class PrometheusMultitaskLoss(nn.Module):
             output.nuclei_offsets,
             output.nuclei_sizes,
             targets,
+            class_weight=self.nuclei_class_weights,
         )
         raw = {
             "tissue_ce": tissue_ce,

@@ -29,6 +29,7 @@ def nuclei_regression_losses(
     offset_map: torch.Tensor,
     size_map: torch.Tensor | None,
     targets: CenterPointTargets,
+    class_weight: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     class_losses, offset_losses, size_losses = [], [], []
     for batch_index, indices in enumerate(targets.indices):
@@ -38,6 +39,7 @@ def nuclei_regression_losses(
             F.cross_entropy(
                 _gather_map(class_logits[batch_index], indices),
                 targets.labels[batch_index],
+                weight=class_weight,
             )
         )
         offset_losses.append(F.l1_loss(_gather_map(offset_map[batch_index], indices), targets.offsets[batch_index]))

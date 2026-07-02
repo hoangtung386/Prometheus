@@ -9,7 +9,11 @@ from .datasets import (
     PumaNucleiDataset,
     PumaTissueDataset,
 )
-from .loaders import create_multitask_dataloaders, create_puma_dataloaders
+from .loaders import (
+    create_multitask_dataloaders,
+    create_multitask_kfold_dataloaders,
+    create_puma_dataloaders,
+)
 from .multitask_dataset import PumaMultitaskDataset
 
 __all__ = [
@@ -23,4 +27,5 @@ __all__ = [
     "TISSUE_CLASS_TO_IDX",
     "create_puma_dataloaders",
     "create_multitask_dataloaders",
+    "create_multitask_kfold_dataloaders",
 ]

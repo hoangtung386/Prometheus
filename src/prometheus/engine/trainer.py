@@ -13,7 +13,7 @@ import numpy as np
 import torch
 
 from ..config import ProjectConfig
-from ..losses import LossWeights, PrometheusMultitaskLoss
+from ..losses import LossWeights, PrometheusMultitaskLoss, compute_class_weights
 from .checkpointing import assert_checkpoint_compatible, load_engine_checkpoint, save_engine_checkpoint
 from .evaluator import evaluate_multitask
 
@@ -51,12 +51,15 @@ class PrometheusTrainer:
         minimum_ratio = config.trainer.min_lr / config.optimizer.lr
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, self._lr_lambda(minimum_ratio))
         self.scaler = torch.amp.GradScaler("cuda", enabled=config.trainer.amp and self.device.type == "cuda")
+        tissue_class_weights, nuclei_class_weights = self._resolve_class_weights()
         self.criterion = PrometheusMultitaskLoss(
             config.model.num_nucleus_types,
             config.model.nuclei_feature_stride,
             LossWeights(**{name: getattr(config.loss, name) for name in LossWeights.__dataclass_fields__}),
             gaussian_radius=config.loss.gaussian_radius,
-        )
+            tissue_class_weights=tissue_class_weights,
+            nuclei_class_weights=nuclei_class_weights,
+        ).to(self.device)
         self.ema_decay = config.trainer.ema_decay
         self.ema_model = None
         if self.ema_decay > 0.0:
@@ -69,6 +72,32 @@ class PrometheusTrainer:
         self.best_primary = float("-inf")
         self.best_tissue = float("-inf")
         self.history: list[dict] = []
+
+    def _resolve_class_weights(self):
+        """Return (tissue, nuclei) inverse-frequency weight tensors, or (None, None).
+
+        Computed once per run by scanning the training loader and cached to the run
+        directory so resumes and repeated runs skip the (slow) full data pass.
+        """
+        if not self.config.loss.class_weighting:
+            return None, None
+        cache_path = self.run_dir / "class_weights.json"
+        if cache_path.is_file():
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            return torch.tensor(cached["tissue"]), torch.tensor(cached["nuclei"])
+        print("Computing inverse-frequency class weights (one pass over the training data)...")
+        tissue_weights, nuclei_weights = compute_class_weights(
+            self.train_loader,
+            self.config.model.num_tissue_classes,
+            self.config.model.num_nucleus_types,
+        )
+        cache_path.write_text(
+            json.dumps({"tissue": tissue_weights.tolist(), "nuclei": nuclei_weights.tolist()}, indent=2),
+            encoding="utf-8",
+        )
+        print(f"  tissue weights: {[round(v, 3) for v in tissue_weights.tolist()]}")
+        print(f"  nuclei weights: {[round(v, 3) for v in nuclei_weights.tolist()]}")
+        return tissue_weights, nuclei_weights
 
     @torch.no_grad()
     def _update_ema(self) -> None:

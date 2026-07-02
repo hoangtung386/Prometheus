@@ -71,6 +71,7 @@ class LossConfig:
     offset: float = 1.0
     size: float = 0.1
     gaussian_radius: int = 2
+    class_weighting: bool = False  # inverse-frequency class weights for tissue + nuclei
 
 
 @dataclass
@@ -120,10 +121,11 @@ class ProjectConfig:
             raise ValueError("gradient_clip_norm must be positive when provided")
         if not 0 <= self.trainer.min_lr <= self.optimizer.lr:
             raise ValueError("min_lr must be between zero and the optimizer learning rate")
+        non_weight_fields = {"gaussian_radius", "class_weighting"}
         loss_weights = {
             name: value
             for name, value in self.loss.__dict__.items()
-            if name != "gaussian_radius"
+            if name not in non_weight_fields
         }
         if any(value < 0 for value in loss_weights.values()) or self.loss.gaussian_radius < 0:
             raise ValueError("Loss weights and gaussian_radius must be non-negative")

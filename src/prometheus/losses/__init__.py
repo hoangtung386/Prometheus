@@ -1,3 +1,4 @@
+from .class_weights import compute_class_weights, inverse_frequency_weights
 from .multitask import LossWeights, PrometheusMultitaskLoss
 from .nuclei import center_focal_loss, nuclei_regression_losses
 from .segmentation import (
@@ -21,5 +22,7 @@ __all__ = [
     "LossWeights",
     "PrometheusMultitaskLoss",
     "center_focal_loss",
+    "compute_class_weights",
+    "inverse_frequency_weights",
     "nuclei_regression_losses",
 ]
