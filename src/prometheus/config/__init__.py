@@ -1,4 +1,4 @@
-"""Production configuration API — legacy names are loaded only on explicit request."""
+"""Production configuration API."""
 
 from .common import DataConfig, EvaluationConfig
 from .loader import load_project_config

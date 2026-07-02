@@ -22,9 +22,8 @@ config       model and training config dataclasses + TOML loader
 cli          audit, train, evaluate and predict commands
 ```
 
-`DualUNet`, `UNetTissue` and semantic postprocessing remain available under
-`prometheus.legacy.*` for old experiments. The production path uses
-`PumaMultitaskDataset`, `PrometheusNet` and exact instance centroid F1.
+The supported path uses `PumaMultitaskDataset`, `PrometheusNet` and exact
+instance centroid F1.
 
 See [architecture](docs/architecture.md) for architectural decisions,
 migration constraints and the remaining research roadmap.
@@ -46,13 +45,10 @@ prometheus/
 │   ├── engine/           trainer, evaluator and checkpoint schema v2
 │   ├── inference/        center decoder and source-space predictor
 │   ├── io/               PUMA JSON/TIFF serializers
-│   ├── legacy/           frozen semantic compatibility implementations
 │   ├── losses/           tissue, nuclei and multitask losses
 │   ├── metrics/          evaluation metrics
-│   ├── models/           model architectures + registry
-│   ├── nn/               stable neural-layer exports
+│   ├── models/           production model architecture
 │   ├── submission/       output validation
-│   ├── training/         deprecated trainer compatibility package
 │   ├── utils/            helpers (norm, etc.)
 │   └── visualization/    plotting utilities
 ├── tests/                unit tests
@@ -70,7 +66,7 @@ The primary entry point is the Colab notebook:
 
 The notebook is the supported training workstation. It verifies that CUDA is
 enabled, audits every annotation, stores the reproducible split beside the
-checkpoints, uses a conservative batch-size-one/accumulation-four default, and
+checkpoints, includes explicit single-GPU batch/LR tuning, and
 automatically resumes from `last.ckpt` after a Colab runtime disconnects.
 
 For local execution, the CLI is also available.
@@ -133,9 +129,7 @@ model = build_model(config)
 trainer = build_trainer(config, model, data)
 ```
 
-Legacy imports (`prometheus.legacy.DualUNet`, `prometheus.legacy.UNetTissue`)
-are retained only for old experiments. New code should use `prometheus.api`
-and `PrometheusNet`.
+Use `prometheus.api` and `PrometheusNet` for model construction and training.
 
 ## Quality gates
 

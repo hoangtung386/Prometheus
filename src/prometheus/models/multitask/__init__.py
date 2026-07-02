@@ -1,4 +1,4 @@
-"""Multitask models — legacy :class:`DualUNet` is only loaded on explicit request."""
+"""Production multitask model."""
 
 from .prometheus_net import PrometheusNet
 

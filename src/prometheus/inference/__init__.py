@@ -1,4 +1,4 @@
-"""Modern inference API — use :mod:`prometheus.legacy` for semantic postprocessing."""
+"""Center-based instance inference API."""
 
 from .nuclei_decoder import decode_nuclei
 from .predictor import MultitaskPrediction, PrometheusPredictor

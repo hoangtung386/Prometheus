@@ -1,4 +1,4 @@
-"""Convert parsed PUMA regions and instances into legacy semantic masks."""
+"""Convert parsed PUMA regions and instances into semantic masks."""
 
 from __future__ import annotations
 

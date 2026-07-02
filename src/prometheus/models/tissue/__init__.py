@@ -1,1 +1,0 @@
-"""Tissue-only models. Use :mod:`prometheus.legacy` for the legacy U-Net variants."""

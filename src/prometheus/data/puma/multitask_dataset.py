@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 from ...domain import MultitaskSample, NucleiTarget, TissueTarget
 from ..spatial import boxes_to_model, letterbox_image, points_to_model
 from ..transforms.multitask import TransformSample
-from .datasets import NUCLEI_CLASS_TO_IDX, TISSUE_CLASS_TO_IDX
+from .classes import NUCLEI_CLASS_TO_IDX, TISSUE_CLASS_TO_IDX
 from .discovery import discover_puma_samples
 from .geojson import parse_nuclei_geojson, parse_tissue_geojson
 from .rasterize import rasterize_regions

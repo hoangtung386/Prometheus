@@ -1,8 +1,6 @@
 """Stable low-level neural network blocks used by the production model.
 
-Experimental modules (attention, MoE, transformer) live under
-:mod:`prometheus.models.experimental` and are excluded from the baseline
-import path to prevent accidental use.
+Only blocks used by the production model are exported here.
 """
 
 from .convnext_block import ConvNeXtBlock

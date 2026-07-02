@@ -39,7 +39,6 @@ graph TD
 | `engine` | Training, evaluation and checkpoint schema v2 |
 | `inference` | Center decoding, spatial restoration and typed prediction |
 | `submission` / `io` | PUMA serialization and structural validation |
-| `legacy` | Frozen semantic U-Net compatibility implementations |
 | `api` | Stable composition root used by CLI and Colab |
 
 ## Architectural decisions
@@ -49,16 +48,10 @@ graph TD
 3. Joint training does not detach tissue features. A frozen teacher must be a separate explicit experiment.
 4. Nuclei geometry is predicted at high resolution, not reconstructed from a stride-32 semantic bottleneck.
 5. Touching same-class nuclei remain separate training instances.
-6. Transformer and MoE blocks are excluded from the production baseline.
+6. Experimental Transformer and MoE branches are not part of the production architecture.
 7. Tissue decoder depths are independent of encoder depths.
 8. Checkpoint selection uses exact nuclei centroid F1 as the primary metric and tissue Dice separately.
 
 ## Spatial convention
 
 All points use pixel-space `(x, y)`. Images are resized with preserved aspect ratio and padded. `ImageMeta` records scale and padding. Inference always inverses that transform before metrics or submission writing.
-
-## Legacy
-
-`DualUNet`, semantic nuclei rasterization and connected-component postprocessing
-remain importable via `prometheus.legacy.*` for old experiments, but they are
-not used by CLI, Colab or the 0.4 engine.
