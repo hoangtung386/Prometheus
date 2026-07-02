@@ -2,7 +2,9 @@
 # Pinned for reproducible notebook/Colab installs.
 # Single source of truth for version bounds: pyproject.toml.
 
-numpy>=1.24.0,<2.0
+# Keep Colab's preinstalled NumPy when it satisfies the minimum. Downgrading
+# NumPy inside a live Python 3.12 kernel can leave binary extensions ABI-mismatched.
+numpy>=1.24.0
 torch>=2.0.0
 timm>=0.9.0
 opencv-python-headless>=4.8.0
