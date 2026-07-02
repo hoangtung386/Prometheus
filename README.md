@@ -66,7 +66,12 @@ prometheus/
 The primary entry point is the Colab notebook:
 
 - [`notebooks/train.ipynb`](notebooks/train.ipynb) — full training pipeline
-  on Google Colab (G4/A100) with dataset from Google Drive.
+  on Google Colab Pro with dataset and persistent checkpoints on Google Drive.
+
+The notebook is the supported training workstation. It verifies that CUDA is
+enabled, audits every annotation, stores the reproducible split beside the
+checkpoints, uses a conservative batch-size-one/accumulation-four default, and
+automatically resumes from `last.ckpt` after a Colab runtime disconnects.
 
 For local execution, the CLI is also available.
 

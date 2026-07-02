@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from ..api import build_datamodule, build_model, build_trainer, load_config, load_predictor
+from ..api import build_criterion, build_datamodule, build_model, build_trainer, load_config, load_predictor
 from ..data.puma.audit import audit_puma_dataset
 from ..data.puma.multitask_dataset import read_native_image
 from ..data.spatial import letterbox_image
@@ -17,7 +17,6 @@ from ..data.transforms import NormalizeMultitask, TransformSample
 from ..domain import Track
 from ..engine import assert_checkpoint_compatible, evaluate_multitask, load_engine_checkpoint
 from ..io import write_nuclei_json, write_tissue_tiff
-from ..losses import LossWeights, PrometheusMultitaskLoss
 from ..submission import validate_submission_outputs
 
 
@@ -34,15 +33,6 @@ def _train(args: argparse.Namespace) -> int:
     return 0
 
 
-def _criterion(config) -> PrometheusMultitaskLoss:
-    loss_weight_fields = {name for name in LossWeights.__dataclass_fields__}
-    return PrometheusMultitaskLoss(
-        config.model.num_nucleus_types,
-        config.model.nuclei_feature_stride,
-        LossWeights(**{name: value for name, value in config.loss.__dict__.items() if name in loss_weight_fields}),
-    )
-
-
 def _evaluate(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     _, validation_loader = build_datamodule(config)
@@ -55,7 +45,7 @@ def _evaluate(args: argparse.Namespace) -> int:
     result = evaluate_multitask(
         model,
         validation_loader,
-        _criterion(config),
+        build_criterion(config),
         device,
         config.model.nuclei_feature_stride,
         config.evaluation.nuclei_radius_px,

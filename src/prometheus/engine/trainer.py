@@ -50,11 +50,11 @@ class PrometheusTrainer:
         minimum_ratio = config.trainer.min_lr / config.optimizer.lr
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, self._lr_lambda(minimum_ratio))
         self.scaler = torch.amp.GradScaler("cuda", enabled=config.trainer.amp and self.device.type == "cuda")
-        loss_weight_fields = {name for name in LossWeights.__dataclass_fields__}
         self.criterion = PrometheusMultitaskLoss(
             config.model.num_nucleus_types,
             config.model.nuclei_feature_stride,
-            LossWeights(**{name: value for name, value in config.loss.__dict__.items() if name in loss_weight_fields}),
+            LossWeights(**{name: getattr(config.loss, name) for name in LossWeights.__dataclass_fields__}),
+            gaussian_radius=config.loss.gaussian_radius,
         )
         self.start_epoch = 0
         self.global_step = 0

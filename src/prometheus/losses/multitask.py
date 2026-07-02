@@ -25,11 +25,20 @@ class LossWeights:
 
 
 class PrometheusMultitaskLoss(nn.Module):
-    def __init__(self, num_nucleus_types: int = 10, output_stride: int = 4, weights: LossWeights | None = None) -> None:
+    def __init__(
+        self,
+        num_nucleus_types: int = 10,
+        output_stride: int = 4,
+        weights: LossWeights | None = None,
+        gaussian_radius: int = 2,
+    ) -> None:
         super().__init__()
+        if gaussian_radius < 0:
+            raise ValueError("gaussian_radius must be non-negative")
         self.num_nucleus_types = num_nucleus_types
         self.output_stride = output_stride
         self.weights = weights or LossWeights()
+        self.gaussian_radius = gaussian_radius
         self.tissue = MulticlassCombinedLoss(
             ce_weight=self.weights.tissue_ce,
             dice_weight=self.weights.tissue_dice,
@@ -42,6 +51,7 @@ class PrometheusMultitaskLoss(nn.Module):
             output.nuclei_center_logits.shape[-2:],
             self.output_stride,
             self.num_nucleus_types,
+            self.gaussian_radius,
         )
         center = center_focal_loss(output.nuclei_center_logits, targets.heatmap)
         nuclei_class, offset, size = nuclei_regression_losses(

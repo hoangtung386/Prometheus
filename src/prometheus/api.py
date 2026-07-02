@@ -8,6 +8,7 @@ from .config import ProjectConfig, load_project_config
 from .data import create_multitask_dataloaders
 from .engine import PrometheusTrainer, assert_checkpoint_compatible, load_engine_checkpoint
 from .inference import PrometheusPredictor
+from .losses import LossWeights, PrometheusMultitaskLoss
 from .models import PrometheusNet
 
 
@@ -31,6 +32,18 @@ def build_datamodule(config: ProjectConfig):
 
 def build_model(config: ProjectConfig) -> PrometheusNet:
     return PrometheusNet(config.model)
+
+
+def build_criterion(config: ProjectConfig) -> PrometheusMultitaskLoss:
+    """Build the configured training loss without leaking config-only fields."""
+    weight_fields = LossWeights.__dataclass_fields__
+    weights = LossWeights(**{name: getattr(config.loss, name) for name in weight_fields})
+    return PrometheusMultitaskLoss(
+        config.model.num_nucleus_types,
+        config.model.nuclei_feature_stride,
+        weights,
+        gaussian_radius=config.loss.gaussian_radius,
+    )
 
 
 def build_trainer(config: ProjectConfig, model=None, datamodule=None, device=None) -> PrometheusTrainer:
