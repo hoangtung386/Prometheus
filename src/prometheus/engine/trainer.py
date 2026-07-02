@@ -235,6 +235,8 @@ class PrometheusTrainer:
         if rng:
             random.setstate(rng["python"])
             np.random.set_state(rng["numpy"])
-            torch.set_rng_state(rng["torch"])
+            # map_location may have moved the RNG tensors onto the GPU; set_rng_state
+            # requires CPU ByteTensors, so pull them back to the CPU before restoring.
+            torch.set_rng_state(rng["torch"].cpu())
             if self.device.type == "cuda" and rng["cuda"] is not None:
-                torch.cuda.set_rng_state_all(rng["cuda"])
+                torch.cuda.set_rng_state_all([state.cpu() for state in rng["cuda"]])
