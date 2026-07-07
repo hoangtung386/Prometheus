@@ -8,6 +8,10 @@ The architecture is transfer-first: its dense encoder starts from ConvNeXt-V2
 FCMAE/ImageNet-22K weights at a reduced learning rate, while nucleus localization is
 class-agnostic and a separate classifier learns the PUMA taxonomy.
 
+For the strongest nuclei path, use the CellViT-SAM-H exporter and classifier workflow
+described in [`docs/cellvit.md`](docs/cellvit.md). It keeps the cell-trained detector
+frozen and retrains only the ten-class PUMA classifier.
+
 See [architecture](docs/architecture.md) for design decisions
 and implementation constraints.
 
@@ -105,6 +109,13 @@ The CLI is useful for local runs or batch pipelines. Most users should use
 ```bash
 # Validate labels and annotation integrity
 uv run prometheus audit --data-root /path/to/puma
+
+# Export nuclei polygons for CellViT-SAM-H classifier training
+uv run prometheus prepare-cellvit \
+  --data-root /path/to/puma \
+  --output /path/to/puma-cellvit \
+  --cellvit-checkpoint /path/to/CellViT-SAM-H-x40-AMP.pth \
+  --run-dir /path/to/cellvit-runs
 
 # Train from a reproducible TOML config
 uv run prometheus train --config configs/experiment/baseline_multitask.toml
