@@ -39,10 +39,12 @@ def encode_centerpoint_targets(
     stride: int,
     num_classes: int,
     gaussian_radius: int = 2,
+    class_agnostic: bool = False,
 ) -> CenterPointTargets:
     output_height, output_width = output_size
     device = targets[0].centroids.device if targets else torch.device("cpu")
-    heatmap = torch.zeros(len(targets), num_classes, output_height, output_width, device=device)
+    heatmap_channels = 1 if class_agnostic else num_classes
+    heatmap = torch.zeros(len(targets), heatmap_channels, output_height, output_width, device=device)
     all_indices, all_labels, all_offsets, all_sizes = [], [], [], []
     for batch_index, target in enumerate(targets):
         scaled = target.centroids / stride
@@ -60,7 +62,8 @@ def encode_centerpoint_targets(
         offsets = scaled - integer.float()
         sizes = torch.stack((boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]), dim=1) / stride
         for center, label in zip(integer, labels, strict=True):
-            _draw_gaussian(heatmap[batch_index, label], int(center[0]), int(center[1]), gaussian_radius)
+            channel = 0 if class_agnostic else int(label)
+            _draw_gaussian(heatmap[batch_index, channel], int(center[0]), int(center[1]), gaussian_radius)
         all_indices.append(integer[:, 1] * output_width + integer[:, 0])
         all_labels.append(labels)
         all_offsets.append(offsets)
