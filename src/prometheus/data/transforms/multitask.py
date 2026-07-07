@@ -199,6 +199,11 @@ class RandomGaussianNoiseMultitask(_PhotometricMultitask):
 
 
 class NormalizeMultitask:
+    """Normalize valid pixels with the statistics expected by pretrained encoders."""
+
+    mean = np.asarray((0.485, 0.456, 0.406), dtype=np.float32)
+    std = np.asarray((0.229, 0.224, 0.225), dtype=np.float32)
+
     def __call__(self, sample: TransformSample) -> TransformSample:
         image = np.zeros_like(sample.image)
         valid_mask = sample.valid_mask
@@ -206,13 +211,9 @@ class NormalizeMultitask:
             valid_mask = np.ones(sample.image.shape[1:], dtype=bool)
         for channel_index in range(image.shape[0]):
             source = sample.image[channel_index]
-            valid_values = source[valid_mask]
-            if valid_values.size == 0:
-                continue
-            low, high = np.percentile(valid_values, (2, 98))
-            valid_values = np.clip(valid_values, low, high)
-            normalized = (valid_values - valid_values.mean()) / (valid_values.std() + 1e-8)
-            image[channel_index, valid_mask] = normalized
+            image[channel_index, valid_mask] = (
+                source[valid_mask] - self.mean[channel_index]
+            ) / self.std[channel_index]
         return TransformSample(image, sample.tissue_mask, sample.centroids, sample.boxes, sample.valid_mask)
 
 
