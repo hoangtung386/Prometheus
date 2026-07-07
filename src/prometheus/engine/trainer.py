@@ -41,8 +41,14 @@ class PrometheusTrainer:
             encoding="utf-8",
         )
         _seed_everything(config.seed)
+        backbone_parameters = list(model.backbone.parameters())
+        backbone_ids = {id(parameter) for parameter in backbone_parameters}
+        task_parameters = [parameter for parameter in model.parameters() if id(parameter) not in backbone_ids]
         self.optimizer = torch.optim.AdamW(
-            model.parameters(),
+            [
+                {"params": backbone_parameters, "lr": config.optimizer.lr * config.optimizer.backbone_lr_multiplier},
+                {"params": task_parameters, "lr": config.optimizer.lr},
+            ],
             lr=config.optimizer.lr,
             weight_decay=config.optimizer.weight_decay,
             betas=config.optimizer.betas,
