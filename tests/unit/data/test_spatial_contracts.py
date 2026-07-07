@@ -45,4 +45,7 @@ def test_normalization_excludes_and_preserves_letterbox_padding() -> None:
     )
     normalized = NormalizeMultitask()(sample)
     assert np.all(normalized.image[:, ~valid_mask] == 0)
-    np.testing.assert_allclose(normalized.image[:, valid_mask].mean(axis=1), 0, atol=1e-5)
+    expected = (
+        image[:, valid_mask] - NormalizeMultitask.mean[:, None]
+    ) / NormalizeMultitask.std[:, None]
+    np.testing.assert_allclose(normalized.image[:, valid_mask], expected, atol=1e-6)
