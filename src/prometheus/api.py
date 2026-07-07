@@ -66,7 +66,7 @@ def build_model(config: ProjectConfig, pretrained: bool = False) -> PrometheusNe
     """
     model = PrometheusNet(config.model)
     if pretrained:
-        load_pretrained_backbone(model.backbone, config.model)
+        load_pretrained_backbone(model.backbone, config.model, variant=config.model.pretrained_variant)
     return model
 
 
