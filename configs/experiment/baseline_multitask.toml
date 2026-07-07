@@ -1,5 +1,5 @@
 [experiment]
-name = "baseline_multitask_v1"
+name = "baseline_multitask_v2_transfer"
 seed = 42
 
 [model]
@@ -12,6 +12,7 @@ encoder_depths = [3, 3, 9, 3]
 tissue_decoder_depths = [1, 2, 2]
 drop_path_rate = 0.1
 nuclei_feature_stride = 4
+pretrained_variant = "convnextv2_tiny.fcmae_ft_in22k_in1k"
 
 [model.context]
 enabled = true
@@ -29,6 +30,7 @@ lr = 0.0002
 weight_decay = 0.01
 betas = [0.9, 0.999]
 eps = 1e-8
+backbone_lr_multiplier = 0.1
 
 [trainer]
 epochs = 100
@@ -55,7 +57,7 @@ checkpoint_metric = "nuclei/macro_f1_summed"
 track = "track2"
 
 [paths]
-run_dir = "/content/drive/MyDrive/prometheus_runs/baseline_multitask_v1"
+run_dir = "/content/drive/MyDrive/prometheus_runs/baseline_multitask_v2_transfer"
 
 [postprocess]
 confidence_threshold = 0.25
