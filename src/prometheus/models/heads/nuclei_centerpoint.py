@@ -26,7 +26,11 @@ class NucleiCenterPointHead(nn.Module):
             nn.GroupNorm(math.gcd(32, feature_dim), feature_dim),
             nn.SiLU(),
         )
-        self.center = nn.Conv2d(feature_dim, num_classes, kernel_size=1)
+        # Detection is class-agnostic. CellViT++ follows the same transfer-learning
+        # principle: preserve a broadly pretrained cell detector and adapt a separate
+        # classifier to the target taxonomy. A class-specific center map plus another
+        # class head creates duplicate peaks and is internally inconsistent.
+        self.center = nn.Conv2d(feature_dim, 1, kernel_size=1)
         self.classes = nn.Conv2d(feature_dim, num_classes, kernel_size=1)
         self.offsets = nn.Conv2d(feature_dim, 2, kernel_size=1)
         self.sizes = nn.Conv2d(feature_dim, 2, kernel_size=1)
