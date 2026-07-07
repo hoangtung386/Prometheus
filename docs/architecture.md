@@ -10,7 +10,7 @@ graph TD
     Tissue --> Context[Gated same-grid context]
     Context --> FPN
     Tissue --> TissueLogits[6-class tissue logits]
-    FPN --> Center[10-class center heatmap]
+    FPN --> Center[Class-agnostic center heatmap]
     FPN --> Class[Nucleus class logits]
     FPN --> Offset[Subpixel offsets]
     FPN --> Size[Optional sizes]
@@ -51,6 +51,21 @@ graph TD
 6. Experimental Transformer and MoE branches are not part of the production architecture.
 7. Tissue decoder depths are independent of encoder depths.
 8. Checkpoint selection uses exact nuclei centroid F1 as the primary metric and tissue Dice separately.
+9. Nucleus localization is class-agnostic and its taxonomy is learned by a separate
+   classifier. This makes transfer from broad cell detectors possible and prevents
+   duplicate per-class center peaks.
+
+## Pretraining strategy
+
+The local dense encoder is initialized from ConvNeXt-V2 Tiny FCMAE weights fine-tuned
+on ImageNet-22K and ImageNet-1K. Its learning rate is reduced relative to the randomly
+initialized task decoders. This retains generic visual features while the tissue and
+PUMA-specific nucleus classifier adapt to the small target dataset.
+
+The architecture intentionally separates nucleus localization from classification,
+matching the useful transfer boundary in CellViT++: a broad pretrained detector can
+remain stable while a small classifier learns the target label set. Checkpoints from
+architecture version 1 are not compatible with this class-agnostic detector.
 
 ## Spatial convention
 
