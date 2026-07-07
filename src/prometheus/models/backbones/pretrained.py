@@ -1,9 +1,10 @@
-"""Initialize the shared ConvNeXt-V2 encoder from ImageNet pretrained weights.
+"""Initialize the shared ConvNeXt-V2 encoder from FCMAE/ImageNet pretrained weights.
 
 The backbone in :mod:`shared_convnext` is a faithful ConvNeXt-**V2** encoder (it uses
 GRN and no layer-scale), so its parameters map one-to-one onto ``timm``'s
-``convnextv2_tiny`` weights. On a tiny dataset (~185 training images) starting from
-these features instead of random init is the single largest quality lever.
+``convnextv2_tiny`` weights. The default was self-supervised with FCMAE and fine-tuned
+on ImageNet-22K then ImageNet-1K. On a tiny dataset (~185 training images), starting
+from these features instead of random initialization is a major quality lever.
 
 The mapping is by construction rather than by position and every tensor is shape
 checked, so a name mismatch across ``timm`` versions surfaces as a loud report
@@ -17,7 +18,7 @@ import torch
 from ...config import PrometheusModelConfig
 from .shared_convnext import SharedConvNeXtBackbone
 
-DEFAULT_VARIANT = "convnextv2_tiny"
+DEFAULT_VARIANT = "convnextv2_tiny.fcmae_ft_in22k_in1k"
 
 
 def _timm_key(our_key: str) -> str | None:
