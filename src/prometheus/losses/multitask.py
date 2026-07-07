@@ -61,6 +61,7 @@ class PrometheusMultitaskLoss(nn.Module):
             self.output_stride,
             self.num_nucleus_types,
             self.gaussian_radius,
+            class_agnostic=True,
         )
         center = center_focal_loss(output.nuclei_center_logits, targets.heatmap)
         nuclei_class, offset, size = nuclei_regression_losses(
