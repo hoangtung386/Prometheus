@@ -14,7 +14,7 @@ from ..heads import NucleiCenterPointHead, TissueSegmentationHead
 
 
 class PrometheusNet(nn.Module):
-    architecture_version = 1
+    architecture_version = 2
 
     def __init__(self, config: PrometheusModelConfig | None = None) -> None:
         super().__init__()
