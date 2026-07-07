@@ -19,6 +19,7 @@ class PrometheusModelConfig:
     drop_path_rate: float = 0.1
     context_enabled: bool = True
     nuclei_feature_stride: int = 4
+    pretrained_variant: str = "convnextv2_tiny.fcmae_ft_in22k_in1k"
 
     def validate(self) -> None:
         if self.name != "prometheus_multitask_v1":
@@ -36,6 +37,8 @@ class PrometheusModelConfig:
             raise ValueError("Task class counts must be positive")
         if self.nuclei_feature_stride not in {4, 8}:
             raise ValueError("nuclei_feature_stride must be 4 or 8")
+        if not self.pretrained_variant.strip():
+            raise ValueError("pretrained_variant cannot be empty")
         if not 0 <= self.drop_path_rate < 1:
             raise ValueError("drop_path_rate must be in [0, 1)")
 
@@ -46,6 +49,7 @@ class OptimizerConfig:
     weight_decay: float = 1e-2
     betas: tuple[float, float] = (0.9, 0.999)
     eps: float = 1e-8
+    backbone_lr_multiplier: float = 0.1
 
 
 @dataclass
@@ -107,6 +111,8 @@ class ProjectConfig:
         self.evaluation.validate()
         if self.optimizer.lr <= 0 or self.optimizer.weight_decay < 0 or self.optimizer.eps <= 0:
             raise ValueError("Invalid optimizer configuration")
+        if not 0 < self.optimizer.backbone_lr_multiplier <= 1:
+            raise ValueError("backbone_lr_multiplier must be in (0, 1]")
         if len(self.optimizer.betas) != 2 or not all(0 <= beta < 1 for beta in self.optimizer.betas):
             raise ValueError("Optimizer betas must contain two values in [0, 1)")
         if self.trainer.epochs <= 0 or self.trainer.batch_size <= 0 or self.trainer.num_workers < 0:
