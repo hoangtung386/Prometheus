@@ -27,8 +27,6 @@ def decode_nuclei(
         flat = scores[batch_index].flatten()
         count = min(max_detections, flat.numel())
         values, flat_indices = flat.topk(count)
-        keep = values >= threshold
-        values, flat_indices = values[keep], flat_indices[keep]
         height, width = scores.shape[-2:]
         spatial_indices = flat_indices % (height * width)
         ys, xs = spatial_indices // width, spatial_indices % width
@@ -38,8 +36,15 @@ def decode_nuclei(
         class_probabilities = output.nuclei_class_logits[batch_index, :, ys, xs].softmax(dim=0).transpose(0, 1)
         predicted_classes = class_probabilities.argmax(dim=1)
         class_confidence = class_probabilities.gather(1, predicted_classes[:, None]).squeeze(1)
+        combined_confidence = values * class_confidence
+        keep = combined_confidence >= threshold
+        values = values[keep]
+        class_confidence = class_confidence[keep]
+        combined_confidence = combined_confidence[keep]
+        predicted_classes = predicted_classes[keep]
+        centers = centers[keep]
         labels = predicted_classes
-        sizes = output.nuclei_sizes[batch_index, :, ys, xs].transpose(0, 1) * stride
+        sizes = output.nuclei_sizes[batch_index, :, ys, xs].transpose(0, 1)[keep] * stride
         boxes = torch.cat((centers - sizes / 2, centers + sizes / 2), dim=1)
         if metadata is not None:
             meta = metadata[batch_index]
@@ -53,6 +58,7 @@ def decode_nuclei(
             )
             values = values[valid]
             class_confidence = class_confidence[valid]
+            combined_confidence = combined_confidence[valid]
             labels = labels[valid]
             centers = centers[valid]
             boxes = boxes[valid]
@@ -70,7 +76,7 @@ def decode_nuclei(
                 Detection(
                     centroid=tuple(float(value) for value in center_array[index]),
                     label=classes[class_index],
-                    confidence=float((values[index] * class_confidence[index]).item()),
+                    confidence=float(combined_confidence[index].item()),
                     box_xyxy=tuple(float(value) for value in box_array[index]),
                 )
             )
