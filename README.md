@@ -4,6 +4,10 @@ Research framework for the PUMA melanoma histopathology challenge. PrometheusNet
 shares shallow ConvNeXt features, decodes tissue semantically and detects nuclei
 as center-based instances from a high-resolution feature pyramid.
 
+The architecture is transfer-first: its dense encoder starts from ConvNeXt-V2
+FCMAE/ImageNet-22K weights at a reduced learning rate, while nucleus localization is
+class-agnostic and a separate classifier learns the PUMA taxonomy.
+
 See [architecture](docs/architecture.md) for design decisions
 and implementation constraints.
 
