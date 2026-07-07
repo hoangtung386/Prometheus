@@ -1,5 +1,6 @@
 """PUMA dataset discovery, parsing, rasterization and datasets."""
 
+from .cellvit_export import CELLVIT_PUMA_CLASS_ORDER, export_cellvit_dataset
 from .classes import (
     NUCLEI_CLASS_TO_IDX,
     NUCLEI_CLASSES,
@@ -13,6 +14,7 @@ from .loaders import (
 from .multitask_dataset import PumaMultitaskDataset
 
 __all__ = [
+    "CELLVIT_PUMA_CLASS_ORDER",
     "NUCLEI_CLASSES",
     "NUCLEI_CLASS_TO_IDX",
     "PumaMultitaskDataset",
@@ -20,4 +22,5 @@ __all__ = [
     "TISSUE_CLASS_TO_IDX",
     "create_multitask_dataloaders",
     "create_multitask_kfold_dataloaders",
+    "export_cellvit_dataset",
 ]
