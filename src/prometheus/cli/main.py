@@ -11,6 +11,7 @@ import torch
 
 from ..api import build_criterion, build_datamodule, build_model, build_trainer, load_config, load_predictor
 from ..data.puma.audit import audit_puma_dataset
+from ..data.puma.cellvit_export import export_cellvit_dataset
 from ..data.puma.multitask_dataset import read_native_image
 from ..data.spatial import letterbox_image
 from ..data.transforms import NormalizeMultitask, TransformSample
@@ -35,6 +36,19 @@ def _train(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     trainer = build_trainer(config)
     trainer.fit(resume_from=args.resume)
+    return 0
+
+
+def _prepare_cellvit(args: argparse.Namespace) -> int:
+    report = export_cellvit_dataset(
+        args.data_root,
+        args.output,
+        args.cellvit_checkpoint,
+        args.run_dir,
+        args.validation_fraction,
+        args.seed,
+    )
+    print(json.dumps(report, indent=2))
     return 0
 
 
@@ -101,6 +115,17 @@ def build_parser() -> argparse.ArgumentParser:
     audit_parser = subparsers.add_parser("audit", help="Validate labels and annotation integrity")
     audit_parser.add_argument("--data-root", required=True)
     audit_parser.set_defaults(handler=_audit)
+
+    cellvit_parser = subparsers.add_parser(
+        "prepare-cellvit", help="Export PUMA and generate a CellViT++ Track-2 classifier config"
+    )
+    cellvit_parser.add_argument("--data-root", required=True)
+    cellvit_parser.add_argument("--output", required=True)
+    cellvit_parser.add_argument("--cellvit-checkpoint", required=True)
+    cellvit_parser.add_argument("--run-dir", required=True)
+    cellvit_parser.add_argument("--validation-fraction", type=float, default=0.2)
+    cellvit_parser.add_argument("--seed", type=int, default=42)
+    cellvit_parser.set_defaults(handler=_prepare_cellvit)
 
     train_parser = subparsers.add_parser("train", help="Train PrometheusNet from a TOML config")
     train_parser.add_argument("--config", required=True)
