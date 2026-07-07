@@ -20,7 +20,7 @@ def test_prometheus_net_typed_output_and_shapes() -> None:
     output = model(torch.randn(2, 3, 65, 79))
     assert isinstance(output, MultitaskOutput)
     assert output.tissue_logits.shape == (2, 6, 65, 79)
-    assert output.nuclei_center_logits.shape == (2, 10, 24, 24)
+    assert output.nuclei_center_logits.shape == (2, 1, 24, 24)
     assert output.nuclei_offsets.shape == (2, 2, 24, 24)
     assert "context_gate_mean" in output.auxiliary
 
@@ -40,7 +40,7 @@ def test_nuclei_head_accepts_non_power_of_two_channels() -> None:
         tissue_decoder_depths=[1, 1, 1],
     )
     output = PrometheusNet(config)(torch.randn(1, 3, 64, 64))
-    assert output.nuclei_center_logits.shape == (1, 10, 16, 16)
+    assert output.nuclei_center_logits.shape == (1, 1, 16, 16)
 
 
 def test_shared_backbone_receives_joint_loss_gradient() -> None:
