@@ -1,4 +1,4 @@
-"""Deterministic one-to-one centroid matching for nuclei detections."""
+"""Deterministic one-to-one centroid matching, replicating the official PUMA evaluator."""
 
 from __future__ import annotations
 
@@ -9,9 +9,13 @@ import numpy as np
 
 from ..domain import Detection, NucleusInstance
 
+__all__ = ["Match", "MatchResult", "match_detections"]
+
 
 @dataclass(frozen=True)
 class Match:
+    """One accepted prediction-to-target pairing."""
+
     prediction_index: int
     target_index: int
     distance_px: float
@@ -19,6 +23,8 @@ class Match:
 
 @dataclass(frozen=True)
 class MatchResult:
+    """Matching outcome. Unmatched predictions are false positives, unmatched targets false negatives."""
+
     matches: tuple[Match, ...]
     unmatched_prediction_indices: tuple[int, ...]
     unmatched_target_indices: tuple[int, ...]
