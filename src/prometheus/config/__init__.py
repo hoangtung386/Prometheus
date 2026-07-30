@@ -1,9 +1,11 @@
-"""Production configuration API."""
+"""Experiment configuration contracts and the strict TOML loader."""
 
-from .common import DataConfig, EvaluationConfig
 from .loader import load_project_config
-from .project import (
+from .schema import (
+    CHECKPOINT_METRICS,
+    DataConfig,
     EngineConfig,
+    EvaluationConfig,
     LossConfig,
     OptimizerConfig,
     PathsConfig,
@@ -13,6 +15,7 @@ from .project import (
 )
 
 __all__ = [
+    "CHECKPOINT_METRICS",
     "DataConfig",
     "EngineConfig",
     "EvaluationConfig",
