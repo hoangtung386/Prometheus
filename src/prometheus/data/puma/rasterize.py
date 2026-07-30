@@ -1,55 +1,100 @@
-"""Convert parsed PUMA regions and instances into semantic masks."""
+"""Rasterize PUMA tissue polygons into a semantic class-index mask.
+
+Two properties of the PUMA annotations make naive rasterization lossy, and both cost
+real leaderboard points on the rare classes:
+
+1. **Interior rings.** A tumour region containing an ulcer, a necrotic focus or a vessel
+   is stored as an exterior ring plus interior rings. Filling only the exterior paints
+   the enclosing class straight over the nested one.
+2. **Overlapping regions.** Tissue features overlap, and the class that survives depends
+   entirely on paint order. Painting in file order is arbitrary: a large ``tumor``
+   feature listed after a small ``blood_vessel`` feature erases the vessel.
+
+This module therefore composites one binary layer per class (holes punched out) and
+resolves overlaps with an explicit, documented priority instead of file order.
+
+Use :func:`prometheus.data.puma.audit.audit_tissue_rasterization` to verify the priority
+against a real dataset before changing it.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from pathlib import Path
 
 import cv2
 import numpy as np
 
-from ...domain import NucleusInstance, TissueClass
+from ...domain import TISSUE_CLASS_TO_INDEX, TissueClass
+from ...domain.geometry import Polygon
+
+__all__ = ["TISSUE_PAINT_PRIORITY", "rasterize_tissue_regions"]
+
+TISSUE_PAINT_PRIORITY: tuple[TissueClass, ...] = (
+    TissueClass.BACKGROUND,
+    TissueClass.STROMA,
+    TissueClass.TUMOR,
+    TissueClass.EPIDERMIS,
+    TissueClass.NECROSIS,
+    TissueClass.BLOOD_VESSEL,
+)
+"""Paint order for overlapping tissue regions; **later entries win**.
+
+Ordered from the largest, least specific region to the smallest, most specific one, so a
+nested structure is never erased by the region that contains it. ``BACKGROUND`` is first
+because the challenge does not score ``tissue_white_background``: when it overlaps a
+scored class, keeping the scored class cannot lose points, whereas keeping background
+would turn the overlap into a false negative.
+"""
 
 
-def rasterize_regions(
-    regions: Iterable[tuple[TissueClass | str, np.ndarray]],
+def _fill(target: np.ndarray, rings: Iterable[np.ndarray], value: int) -> None:
+    contours = [np.rint(ring).astype(np.int32).reshape(-1, 1, 2) for ring in rings]
+    if contours:
+        cv2.fillPoly(target, contours, value)
+
+
+def rasterize_tissue_regions(
+    regions: Iterable[tuple[TissueClass, Polygon]],
     image_size: tuple[int, int],
-    class_map: dict[str, int],
+    priority: tuple[TissueClass, ...] = TISSUE_PAINT_PRIORITY,
 ) -> np.ndarray:
+    """Return a ``(H, W)`` uint8 mask of training class indices.
+
+    Args:
+        regions: ``(class, polygon)`` pairs as produced by
+            :func:`prometheus.data.puma.geojson.parse_tissue_geojson`.
+        image_size: ``(height, width)`` of the output mask.
+        priority: Paint order for overlaps; later entries win. Defaults to
+            :data:`TISSUE_PAINT_PRIORITY`.
+
+    Unlabelled pixels stay ``0`` (background), which is also what the challenge expects
+    for ``tissue_white_background``.
+    """
     height, width = image_size
-    label_mask = np.zeros((height, width), dtype=np.uint8)
+    grouped: dict[TissueClass, list[Polygon]] = {}
     for label, polygon in regions:
-        name = label.value if hasattr(label, "value") else str(label)
-        class_index = class_map.get(name)
-        if class_index is None or class_index == 0:
+        grouped.setdefault(label, []).append(polygon)
+
+    unknown = set(grouped) - set(priority)
+    if unknown:
+        raise ValueError(f"Tissue classes missing from the paint priority: {sorted(item.value for item in unknown)}")
+
+    mask = np.zeros((height, width), dtype=np.uint8)
+    layer = np.zeros((height, width), dtype=np.uint8)
+    scratch = np.zeros((height, width), dtype=np.uint8)
+    for label in priority:
+        polygons = grouped.get(label)
+        class_index = TISSUE_CLASS_TO_INDEX[label.value]
+        if not polygons or class_index == 0:
             continue
-        points = np.rint(polygon).astype(np.int32).reshape(-1, 1, 2)
-        cv2.fillPoly(label_mask, [points], class_index)
-    return label_mask
-
-
-def rasterize_instances(
-    instances: Iterable[NucleusInstance],
-    image_size: tuple[int, int],
-    class_map: dict[str, int],
-) -> np.ndarray:
-    return rasterize_regions(
-        ((instance.label.value, instance.polygon) for instance in instances),
-        image_size,
-        class_map,
-    )
-
-
-def class_index_to_one_hot(label_mask: np.ndarray, num_classes: int) -> np.ndarray:
-    return np.eye(num_classes, dtype=np.uint8)[label_mask].transpose(2, 0, 1)
-
-
-def geojson_to_mask(
-    geojson_path: str | Path,
-    image_size: tuple[int, int],
-    class_map: dict[str, int],
-) -> np.ndarray:
-    from .geojson import parse_tissue_geojson
-
-    regions = [(label, polygon) for label, polygon in parse_tissue_geojson(geojson_path)]
-    return rasterize_regions(regions, image_size, class_map)
+        layer.fill(0)
+        for polygon in polygons:
+            # A feature-local scratch buffer is required: punching this feature's holes
+            # directly into the shared layer would also erase a sibling polygon of the
+            # same class that legitimately covers the same pixels.
+            scratch.fill(0)
+            _fill(scratch, [polygon.exterior], 1)
+            _fill(scratch, polygon.holes, 0)
+            np.bitwise_or(layer, scratch, out=layer)
+        mask[layer.astype(bool)] = class_index
+    return mask
