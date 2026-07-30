@@ -1,0 +1,1282 @@
+===== Fold 1/5 =====
+Pretrained backbone: loaded 196/196 encoder tensors from timm 'convnextv2_tiny'.
+Computing inverse-frequency class weights (one pass over the training data)...
+  tissue weights: [3.782, 0.009, 0.024, 0.311, 1.045, 0.828]
+  nuclei weights: [0.023, 0.339, 0.763, 0.171, 2.189, 0.057, 2.136, 2.931, 0.669, 0.721]
+Epoch 000 batch 0000/0011 loss=16.7476
+Epoch 000 batch 0010/0011 loss=10.2770
+Epoch 000 loss=15.7923 tissue_dice=0.0326 nuclei_f1=0.0110 peak_vram=61.04GiB
+Epoch 001 batch 0000/0011 loss=9.9068
+Epoch 001 batch 0010/0011 loss=6.8584
+Epoch 001 loss=15.2743 tissue_dice=0.0331 nuclei_f1=0.0113 peak_vram=61.04GiB
+Epoch 002 batch 0000/0011 loss=8.5725
+Epoch 002 batch 0010/0011 loss=6.5306
+Epoch 002 loss=14.6146 tissue_dice=0.0337 nuclei_f1=0.0116 peak_vram=61.04GiB
+Epoch 003 batch 0000/0011 loss=5.9111
+Epoch 003 batch 0010/0011 loss=7.1314
+Epoch 003 loss=13.9488 tissue_dice=0.0344 nuclei_f1=0.0115 peak_vram=61.04GiB
+Epoch 004 batch 0000/0011 loss=6.2259
+Epoch 004 batch 0010/0011 loss=5.3477
+Epoch 004 loss=13.3238 tissue_dice=0.0351 nuclei_f1=0.0127 peak_vram=61.04GiB
+Epoch 005 batch 0000/0011 loss=4.7709
+Epoch 005 batch 0010/0011 loss=5.2269
+Epoch 005 loss=12.7566 tissue_dice=0.0359 nuclei_f1=0.0132 peak_vram=61.04GiB
+Epoch 006 batch 0000/0011 loss=5.4160
+Epoch 006 batch 0010/0011 loss=5.0886
+Epoch 006 loss=12.2312 tissue_dice=0.0371 nuclei_f1=0.0136 peak_vram=61.04GiB
+Epoch 007 batch 0000/0011 loss=5.1149
+Epoch 007 batch 0010/0011 loss=4.2015
+Epoch 007 loss=11.7570 tissue_dice=0.0383 nuclei_f1=0.0141 peak_vram=61.04GiB
+Epoch 008 batch 0000/0011 loss=4.9642
+Epoch 008 batch 0010/0011 loss=3.0322
+Epoch 008 loss=11.3184 tissue_dice=0.0395 nuclei_f1=0.0156 peak_vram=61.04GiB
+Epoch 009 batch 0000/0011 loss=5.8481
+Epoch 009 batch 0010/0011 loss=3.3269
+Epoch 009 loss=10.9261 tissue_dice=0.0412 nuclei_f1=0.0166 peak_vram=61.04GiB
+Epoch 010 batch 0000/0011 loss=4.4026
+Epoch 010 batch 0010/0011 loss=4.3807
+Epoch 010 loss=10.5701 tissue_dice=0.0432 nuclei_f1=0.0171 peak_vram=61.04GiB
+Epoch 011 batch 0000/0011 loss=4.4245
+Epoch 011 batch 0010/0011 loss=2.6011
+Epoch 011 loss=10.2395 tissue_dice=0.0455 nuclei_f1=0.0166 peak_vram=61.04GiB
+Epoch 012 batch 0000/0011 loss=4.7934
+Epoch 012 batch 0010/0011 loss=4.9716
+Epoch 012 loss=9.9379 tissue_dice=0.0481 nuclei_f1=0.0161 peak_vram=61.04GiB
+Epoch 013 batch 0000/0011 loss=4.5038
+Epoch 013 batch 0010/0011 loss=4.5251
+Epoch 013 loss=9.6650 tissue_dice=0.0517 nuclei_f1=0.0150 peak_vram=61.04GiB
+Epoch 014 batch 0000/0011 loss=4.3226
+Epoch 014 batch 0010/0011 loss=3.4056
+Epoch 014 loss=9.4248 tissue_dice=0.0561 nuclei_f1=0.0151 peak_vram=61.04GiB
+Epoch 015 batch 0000/0011 loss=3.6016
+Epoch 015 batch 0010/0011 loss=3.9295
+Epoch 015 loss=9.2112 tissue_dice=0.0616 nuclei_f1=0.0153 peak_vram=61.04GiB
+Epoch 016 batch 0000/0011 loss=3.7802
+Epoch 016 batch 0010/0011 loss=3.0941
+Epoch 016 loss=9.0130 tissue_dice=0.0686 nuclei_f1=0.0166 peak_vram=61.04GiB
+Epoch 017 batch 0000/0011 loss=3.5187
+Epoch 017 batch 0010/0011 loss=3.8507
+Epoch 017 loss=8.8188 tissue_dice=0.0773 nuclei_f1=0.0180 peak_vram=61.04GiB
+Epoch 018 batch 0000/0011 loss=3.2396
+Epoch 018 batch 0010/0011 loss=3.4158
+Epoch 018 loss=8.6401 tissue_dice=0.0884 nuclei_f1=0.0192 peak_vram=61.04GiB
+Epoch 019 batch 0000/0011 loss=3.5108
+Epoch 019 batch 0010/0011 loss=5.4256
+Epoch 019 loss=8.4803 tissue_dice=0.1032 nuclei_f1=0.0202 peak_vram=61.04GiB
+Epoch 020 batch 0000/0011 loss=5.8287
+Epoch 020 batch 0010/0011 loss=2.7527
+Epoch 020 loss=8.3344 tissue_dice=0.1195 nuclei_f1=0.0224 peak_vram=61.04GiB
+Epoch 021 batch 0000/0011 loss=3.4127
+Epoch 021 batch 0010/0011 loss=3.1708
+Epoch 021 loss=8.1970 tissue_dice=0.1402 nuclei_f1=0.0253 peak_vram=61.04GiB
+Epoch 022 batch 0000/0011 loss=3.3381
+Epoch 022 batch 0010/0011 loss=3.5965
+Epoch 022 loss=8.0742 tissue_dice=0.1635 nuclei_f1=0.0287 peak_vram=61.04GiB
+Epoch 023 batch 0000/0011 loss=2.1833
+Epoch 023 batch 0010/0011 loss=3.2079
+Epoch 023 loss=7.9630 tissue_dice=0.1868 nuclei_f1=0.0328 peak_vram=61.04GiB
+Epoch 024 batch 0000/0011 loss=2.9146
+Epoch 024 batch 0010/0011 loss=2.6655
+Epoch 024 loss=7.8523 tissue_dice=0.2108 nuclei_f1=0.0373 peak_vram=61.04GiB
+Epoch 025 batch 0000/0011 loss=2.6809
+Epoch 025 batch 0010/0011 loss=3.1493
+Epoch 025 loss=7.7479 tissue_dice=0.2330 nuclei_f1=0.0434 peak_vram=61.04GiB
+Epoch 026 batch 0000/0011 loss=2.8809
+Epoch 026 batch 0010/0011 loss=2.1730
+Epoch 026 loss=7.6513 tissue_dice=0.2562 nuclei_f1=0.0502 peak_vram=61.04GiB
+Epoch 027 batch 0000/0011 loss=2.6855
+Epoch 027 batch 0010/0011 loss=3.9782
+Epoch 027 loss=7.5632 tissue_dice=0.2788 nuclei_f1=0.0593 peak_vram=61.04GiB
+Epoch 028 batch 0000/0011 loss=2.5660
+Epoch 028 batch 0010/0011 loss=3.2633
+Epoch 028 loss=7.4786 tissue_dice=0.2972 nuclei_f1=0.0679 peak_vram=61.04GiB
+Epoch 029 batch 0000/0011 loss=2.0075
+Epoch 029 batch 0010/0011 loss=2.6645
+Epoch 029 loss=7.3967 tissue_dice=0.3148 nuclei_f1=0.0751 peak_vram=61.04GiB
+Epoch 030 batch 0000/0011 loss=3.6821
+Epoch 030 batch 0010/0011 loss=2.5494
+Epoch 030 loss=7.3173 tissue_dice=0.3333 nuclei_f1=0.0836 peak_vram=61.04GiB
+Epoch 031 batch 0000/0011 loss=2.8478
+Epoch 031 batch 0010/0011 loss=2.4786
+Epoch 031 loss=7.2457 tissue_dice=0.3502 nuclei_f1=0.0934 peak_vram=61.04GiB
+Epoch 032 batch 0000/0011 loss=2.1969
+Epoch 032 batch 0010/0011 loss=2.3750
+Epoch 032 loss=7.1830 tissue_dice=0.3663 nuclei_f1=0.1010 peak_vram=61.04GiB
+Epoch 033 batch 0000/0011 loss=2.2297
+Epoch 033 batch 0010/0011 loss=2.2805
+Epoch 033 loss=7.1235 tissue_dice=0.3815 nuclei_f1=0.1100 peak_vram=61.04GiB
+Epoch 034 batch 0000/0011 loss=2.3145
+Epoch 034 batch 0010/0011 loss=2.5066
+Epoch 034 loss=7.0623 tissue_dice=0.3953 nuclei_f1=0.1170 peak_vram=61.04GiB
+Epoch 035 batch 0000/0011 loss=2.4297
+Epoch 035 batch 0010/0011 loss=1.8577
+Epoch 035 loss=7.0048 tissue_dice=0.4086 nuclei_f1=0.1264 peak_vram=61.04GiB
+Epoch 036 batch 0000/0011 loss=2.3160
+Epoch 036 batch 0010/0011 loss=3.6610
+Epoch 036 loss=6.9528 tissue_dice=0.4204 nuclei_f1=0.1342 peak_vram=61.04GiB
+Epoch 037 batch 0000/0011 loss=2.2099
+Epoch 037 batch 0010/0011 loss=1.8853
+Epoch 037 loss=6.9002 tissue_dice=0.4320 nuclei_f1=0.1439 peak_vram=61.04GiB
+Epoch 038 batch 0000/0011 loss=2.2759
+Epoch 038 batch 0010/0011 loss=2.7211
+Epoch 038 loss=6.8524 tissue_dice=0.4426 nuclei_f1=0.1537 peak_vram=61.04GiB
+Epoch 039 batch 0000/0011 loss=2.2214
+Epoch 039 batch 0010/0011 loss=2.1116
+Epoch 039 loss=6.8088 tissue_dice=0.4517 nuclei_f1=0.1595 peak_vram=61.04GiB
+Epoch 040 batch 0000/0011 loss=2.1144
+Epoch 040 batch 0010/0011 loss=1.9692
+Epoch 040 loss=6.7571 tissue_dice=0.4594 nuclei_f1=0.1674 peak_vram=61.04GiB
+Epoch 041 batch 0000/0011 loss=1.9206
+Epoch 041 batch 0010/0011 loss=1.5318
+Epoch 041 loss=6.7153 tissue_dice=0.4657 nuclei_f1=0.1736 peak_vram=61.04GiB
+Epoch 042 batch 0000/0011 loss=1.9795
+Epoch 042 batch 0010/0011 loss=1.9010
+Epoch 042 loss=6.6824 tissue_dice=0.4709 nuclei_f1=0.1775 peak_vram=61.04GiB
+Epoch 043 batch 0000/0011 loss=2.0405
+Epoch 043 batch 0010/0011 loss=1.5850
+Epoch 043 loss=6.6515 tissue_dice=0.4752 nuclei_f1=0.1845 peak_vram=61.04GiB
+Epoch 044 batch 0000/0011 loss=1.8330
+Epoch 044 batch 0010/0011 loss=1.8811
+Epoch 044 loss=6.6233 tissue_dice=0.4788 nuclei_f1=0.1914 peak_vram=61.04GiB
+Epoch 045 batch 0000/0011 loss=1.9074
+Epoch 045 batch 0010/0011 loss=1.9135
+Epoch 045 loss=6.5992 tissue_dice=0.4819 nuclei_f1=0.2093 peak_vram=61.04GiB
+Epoch 046 batch 0000/0011 loss=1.7395
+Epoch 046 batch 0010/0011 loss=2.2336
+Epoch 046 loss=6.5764 tissue_dice=0.4840 nuclei_f1=0.2131 peak_vram=61.04GiB
+Epoch 047 batch 0000/0011 loss=1.7390
+Epoch 047 batch 0010/0011 loss=1.4217
+Epoch 047 loss=6.5558 tissue_dice=0.4853 nuclei_f1=0.2280 peak_vram=61.04GiB
+Epoch 048 batch 0000/0011 loss=1.7323
+Epoch 048 batch 0010/0011 loss=1.7929
+Epoch 048 loss=6.5395 tissue_dice=0.4865 nuclei_f1=0.2312 peak_vram=61.04GiB
+Epoch 049 batch 0000/0011 loss=1.5410
+Epoch 049 batch 0010/0011 loss=1.9514
+Epoch 049 loss=6.5246 tissue_dice=0.4875 nuclei_f1=0.2344 peak_vram=61.04GiB
+Epoch 050 batch 0000/0011 loss=1.6451
+Epoch 050 batch 0010/0011 loss=1.4172
+Epoch 050 loss=6.5131 tissue_dice=0.4882 nuclei_f1=0.2381 peak_vram=61.04GiB
+Epoch 051 batch 0000/0011 loss=1.5212
+Epoch 051 batch 0010/0011 loss=1.4789
+Epoch 051 loss=6.4996 tissue_dice=0.4888 nuclei_f1=0.2433 peak_vram=61.04GiB
+Epoch 052 batch 0000/0011 loss=1.4826
+Epoch 052 batch 0010/0011 loss=1.7205
+Epoch 052 loss=6.4898 tissue_dice=0.4894 nuclei_f1=0.2463 peak_vram=61.04GiB
+Epoch 053 batch 0000/0011 loss=1.5483
+Epoch 053 batch 0010/0011 loss=1.5356
+Epoch 053 loss=6.4806 tissue_dice=0.4899 nuclei_f1=0.2491 peak_vram=61.04GiB
+Epoch 054 batch 0000/0011 loss=1.8824
+Epoch 054 batch 0010/0011 loss=2.0418
+Epoch 054 loss=6.4664 tissue_dice=0.4905 nuclei_f1=0.2510 peak_vram=61.04GiB
+Epoch 055 batch 0000/0011 loss=1.5844
+Epoch 055 batch 0010/0011 loss=1.5701
+Epoch 055 loss=6.4607 tissue_dice=0.4912 nuclei_f1=0.2535 peak_vram=61.04GiB
+Epoch 056 batch 0000/0011 loss=1.6732
+Epoch 056 batch 0010/0011 loss=1.3148
+Epoch 056 loss=6.4564 tissue_dice=0.4921 nuclei_f1=0.2537 peak_vram=61.04GiB
+Epoch 057 batch 0000/0011 loss=1.3514
+Epoch 057 batch 0010/0011 loss=1.4592
+Epoch 057 loss=6.4520 tissue_dice=0.4930 nuclei_f1=0.2572 peak_vram=61.04GiB
+Epoch 058 batch 0000/0011 loss=1.5520
+Epoch 058 batch 0010/0011 loss=1.5856
+Epoch 058 loss=6.4477 tissue_dice=0.4939 nuclei_f1=0.2597 peak_vram=61.04GiB
+Epoch 059 batch 0000/0011 loss=1.6371
+Epoch 059 batch 0010/0011 loss=1.3732
+Epoch 059 loss=6.4428 tissue_dice=0.4945 nuclei_f1=0.2618 peak_vram=61.04GiB
+Epoch 060 batch 0000/0011 loss=1.4127
+Epoch 060 batch 0010/0011 loss=1.5582
+Epoch 060 loss=6.4361 tissue_dice=0.4952 nuclei_f1=0.2619 peak_vram=61.04GiB
+Epoch 061 batch 0000/0011 loss=1.5322
+Epoch 061 batch 0010/0011 loss=1.3157
+Epoch 061 loss=6.4299 tissue_dice=0.4958 nuclei_f1=0.2647 peak_vram=61.04GiB
+Epoch 062 batch 0000/0011 loss=1.4543
+Epoch 062 batch 0010/0011 loss=1.3260
+Epoch 062 loss=6.4290 tissue_dice=0.4965 nuclei_f1=0.2682 peak_vram=61.04GiB
+Epoch 063 batch 0000/0011 loss=1.4726
+Epoch 063 batch 0010/0011 loss=1.7761
+Epoch 063 loss=6.4285 tissue_dice=0.4972 nuclei_f1=0.2694 peak_vram=61.04GiB
+Epoch 064 batch 0000/0011 loss=1.4143
+Epoch 064 batch 0010/0011 loss=1.8091
+Epoch 064 loss=6.4281 tissue_dice=0.4979 nuclei_f1=0.2715 peak_vram=61.04GiB
+Epoch 065 batch 0000/0011 loss=1.4952
+Epoch 065 batch 0010/0011 loss=1.2061
+Epoch 065 loss=6.4260 tissue_dice=0.4984 nuclei_f1=0.2727 peak_vram=61.04GiB
+Epoch 066 batch 0000/0011 loss=1.3931
+Epoch 066 batch 0010/0011 loss=1.3299
+Epoch 066 loss=6.4277 tissue_dice=0.4989 nuclei_f1=0.2743 peak_vram=61.04GiB
+Epoch 067 batch 0000/0011 loss=1.3873
+Epoch 067 batch 0010/0011 loss=1.5288
+Epoch 067 loss=6.4324 tissue_dice=0.4993 nuclei_f1=0.2732 peak_vram=61.04GiB
+Epoch 068 batch 0000/0011 loss=1.2398
+Epoch 068 batch 0010/0011 loss=1.1578
+Epoch 068 loss=6.4388 tissue_dice=0.4996 nuclei_f1=0.2747 peak_vram=61.04GiB
+Epoch 069 batch 0000/0011 loss=1.1825
+Epoch 069 batch 0010/0011 loss=1.3277
+Epoch 069 loss=6.4400 tissue_dice=0.5000 nuclei_f1=0.2764 peak_vram=61.04GiB
+Epoch 070 batch 0000/0011 loss=1.3747
+Epoch 070 batch 0010/0011 loss=1.4449
+Epoch 070 loss=6.4480 tissue_dice=0.5002 nuclei_f1=0.2771 peak_vram=61.04GiB
+Epoch 071 batch 0000/0011 loss=1.2966
+Epoch 071 batch 0010/0011 loss=1.1991
+Epoch 071 loss=6.4551 tissue_dice=0.5003 nuclei_f1=0.2794 peak_vram=61.04GiB
+Epoch 072 batch 0000/0011 loss=1.2737
+Epoch 072 batch 0010/0011 loss=1.1880
+Epoch 072 loss=6.4649 tissue_dice=0.5004 nuclei_f1=0.2809 peak_vram=61.04GiB
+Epoch 073 batch 0000/0011 loss=1.2749
+Epoch 073 batch 0010/0011 loss=1.1814
+Epoch 073 loss=6.4742 tissue_dice=0.5005 nuclei_f1=0.2809 peak_vram=61.04GiB
+Epoch 074 batch 0000/0011 loss=1.1860
+Epoch 074 batch 0010/0011 loss=1.4033
+Epoch 074 loss=6.4839 tissue_dice=0.5006 nuclei_f1=0.2822 peak_vram=61.04GiB
+Epoch 075 batch 0000/0011 loss=1.5061
+Epoch 075 batch 0010/0011 loss=1.2816
+Epoch 075 loss=6.4919 tissue_dice=0.5007 nuclei_f1=0.2825 peak_vram=61.04GiB
+Epoch 076 batch 0000/0011 loss=1.1775
+Epoch 076 batch 0010/0011 loss=1.7966
+Epoch 076 loss=6.5015 tissue_dice=0.5007 nuclei_f1=0.2838 peak_vram=61.04GiB
+Epoch 077 batch 0000/0011 loss=1.2399
+Epoch 077 batch 0010/0011 loss=1.3060
+Epoch 077 loss=6.5110 tissue_dice=0.5009 nuclei_f1=0.2814 peak_vram=61.04GiB
+Epoch 078 batch 0000/0011 loss=1.2661
+Epoch 078 batch 0010/0011 loss=1.4441
+Epoch 078 loss=6.5195 tissue_dice=0.5011 nuclei_f1=0.2833 peak_vram=61.04GiB
+Epoch 079 batch 0000/0011 loss=1.1358
+Epoch 079 batch 0010/0011 loss=1.1247
+Epoch 079 loss=6.5286 tissue_dice=0.5013 nuclei_f1=0.2853 peak_vram=61.04GiB
+Epoch 080 batch 0000/0011 loss=1.1796
+Epoch 080 batch 0010/0011 loss=1.0727
+Epoch 080 loss=6.5394 tissue_dice=0.5016 nuclei_f1=0.2879 peak_vram=61.04GiB
+Epoch 081 batch 0000/0011 loss=1.1790
+Epoch 081 batch 0010/0011 loss=1.3961
+Epoch 081 loss=6.5508 tissue_dice=0.5019 nuclei_f1=0.2892 peak_vram=61.04GiB
+Epoch 082 batch 0000/0011 loss=1.2225
+Epoch 082 batch 0010/0011 loss=0.9254
+Epoch 082 loss=6.5627 tissue_dice=0.5022 nuclei_f1=0.2891 peak_vram=61.04GiB
+Epoch 083 batch 0000/0011 loss=1.0917
+Epoch 083 batch 0010/0011 loss=1.0952
+Epoch 083 loss=6.5764 tissue_dice=0.5024 nuclei_f1=0.2968 peak_vram=61.04GiB
+Epoch 084 batch 0000/0011 loss=1.2231
+Epoch 084 batch 0010/0011 loss=1.2469
+Epoch 084 loss=6.5910 tissue_dice=0.5027 nuclei_f1=0.2974 peak_vram=61.04GiB
+Epoch 085 batch 0000/0011 loss=1.1837
+Epoch 085 batch 0010/0011 loss=1.2388
+Epoch 085 loss=6.6050 tissue_dice=0.5030 nuclei_f1=0.2974 peak_vram=61.04GiB
+Epoch 086 batch 0000/0011 loss=1.1464
+Epoch 086 batch 0010/0011 loss=1.1643
+Epoch 086 loss=6.6183 tissue_dice=0.5034 nuclei_f1=0.2980 peak_vram=61.04GiB
+Epoch 087 batch 0000/0011 loss=1.3160
+Epoch 087 batch 0010/0011 loss=1.1631
+Epoch 087 loss=6.6328 tissue_dice=0.5038 nuclei_f1=0.2987 peak_vram=61.04GiB
+Epoch 088 batch 0000/0011 loss=1.1480
+Epoch 088 batch 0010/0011 loss=1.6646
+Epoch 088 loss=6.6489 tissue_dice=0.5042 nuclei_f1=0.3000 peak_vram=61.04GiB
+Epoch 089 batch 0000/0011 loss=1.4310
+Epoch 089 batch 0010/0011 loss=1.4748
+Epoch 089 loss=6.6651 tissue_dice=0.5046 nuclei_f1=0.2997 peak_vram=61.04GiB
+Epoch 090 batch 0000/0011 loss=1.2158
+Epoch 090 batch 0010/0011 loss=1.2699
+Epoch 090 loss=6.6816 tissue_dice=0.5050 nuclei_f1=0.3009 peak_vram=61.04GiB
+Epoch 091 batch 0000/0011 loss=1.2246
+Epoch 091 batch 0010/0011 loss=1.1107
+Epoch 091 loss=6.6978 tissue_dice=0.5055 nuclei_f1=0.3020 peak_vram=61.04GiB
+Epoch 092 batch 0000/0011 loss=1.1717
+Epoch 092 batch 0010/0011 loss=1.1777
+Epoch 092 loss=6.7130 tissue_dice=0.5059 nuclei_f1=0.3033 peak_vram=61.04GiB
+Epoch 093 batch 0000/0011 loss=1.2326
+Epoch 093 batch 0010/0011 loss=1.3573
+Epoch 093 loss=6.7289 tissue_dice=0.5063 nuclei_f1=0.3030 peak_vram=61.04GiB
+Epoch 094 batch 0000/0011 loss=0.9918
+Epoch 094 batch 0010/0011 loss=1.4042
+Epoch 094 loss=6.7465 tissue_dice=0.5065 nuclei_f1=0.3035 peak_vram=61.04GiB
+Epoch 095 batch 0000/0011 loss=1.0552
+Epoch 095 batch 0010/0011 loss=1.3419
+Epoch 095 loss=6.7637 tissue_dice=0.5067 nuclei_f1=0.3043 peak_vram=61.04GiB
+Epoch 096 batch 0000/0011 loss=1.1341
+Epoch 096 batch 0010/0011 loss=0.8968
+Epoch 096 loss=6.7811 tissue_dice=0.5067 nuclei_f1=0.3028 peak_vram=61.04GiB
+Epoch 097 batch 0000/0011 loss=1.1648
+Epoch 097 batch 0010/0011 loss=1.2401
+Epoch 097 loss=6.7997 tissue_dice=0.5067 nuclei_f1=0.3035 peak_vram=61.04GiB
+Epoch 098 batch 0000/0011 loss=1.2100
+Epoch 098 batch 0010/0011 loss=1.1188
+Epoch 098 loss=6.8173 tissue_dice=0.5066 nuclei_f1=0.3047 peak_vram=61.04GiB
+Epoch 099 batch 0000/0011 loss=1.1278
+Epoch 099 batch 0010/0011 loss=1.0857
+Epoch 099 loss=6.8362 tissue_dice=0.5063 nuclei_f1=0.3053 peak_vram=61.04GiB
+Fold 0: best nuclei_f1=0.3053  best tissue_dice=0.5067
+
+===== Fold 2/5 =====
+Pretrained backbone: loaded 196/196 encoder tensors from timm 'convnextv2_tiny'.
+Computing inverse-frequency class weights (one pass over the training data)...
+  tissue weights: [3.125, 0.017, 0.042, 0.549, 0.769, 1.499]
+  nuclei weights: [0.023, 0.331, 0.755, 0.18, 1.802, 0.058, 2.663, 2.814, 0.624, 0.75]
+Epoch 000 batch 0000/0011 loss=35.1351
+Epoch 000 batch 0010/0011 loss=10.3260
+Epoch 000 loss=26.9872 tissue_dice=0.0368 nuclei_f1=0.0018 peak_vram=61.04GiB
+Epoch 001 batch 0000/0011 loss=12.3288
+Epoch 001 batch 0010/0011 loss=9.0444
+Epoch 001 loss=24.8557 tissue_dice=0.0384 nuclei_f1=0.0019 peak_vram=61.04GiB
+Epoch 002 batch 0000/0011 loss=7.6243
+Epoch 002 batch 0010/0011 loss=6.2879
+Epoch 002 loss=22.2440 tissue_dice=0.0401 nuclei_f1=0.0019 peak_vram=61.04GiB
+Epoch 003 batch 0000/0011 loss=7.0552
+Epoch 003 batch 0010/0011 loss=5.9580
+Epoch 003 loss=19.8428 tissue_dice=0.0419 nuclei_f1=0.0019 peak_vram=61.04GiB
+Epoch 004 batch 0000/0011 loss=6.2731
+Epoch 004 batch 0010/0011 loss=6.8048
+Epoch 004 loss=17.8683 tissue_dice=0.0438 nuclei_f1=0.0019 peak_vram=61.04GiB
+Epoch 005 batch 0000/0011 loss=5.6820
+Epoch 005 batch 0010/0011 loss=5.5084
+Epoch 005 loss=16.3011 tissue_dice=0.0469 nuclei_f1=0.0020 peak_vram=61.04GiB
+Epoch 006 batch 0000/0011 loss=4.8263
+Epoch 006 batch 0010/0011 loss=7.5229
+Epoch 006 loss=14.9900 tissue_dice=0.0510 nuclei_f1=0.0020 peak_vram=61.04GiB
+Epoch 007 batch 0000/0011 loss=4.8509
+Epoch 007 batch 0010/0011 loss=4.5292
+Epoch 007 loss=13.9316 tissue_dice=0.0558 nuclei_f1=0.0041 peak_vram=61.04GiB
+Epoch 008 batch 0000/0011 loss=4.2024
+Epoch 008 batch 0010/0011 loss=4.2997
+Epoch 008 loss=13.0349 tissue_dice=0.0630 nuclei_f1=0.0041 peak_vram=61.04GiB
+Epoch 009 batch 0000/0011 loss=4.4097
+Epoch 009 batch 0010/0011 loss=3.3435
+Epoch 009 loss=12.2747 tissue_dice=0.0724 nuclei_f1=0.0047 peak_vram=61.04GiB
+Epoch 010 batch 0000/0011 loss=4.4798
+Epoch 010 batch 0010/0011 loss=4.4247
+Epoch 010 loss=11.6289 tissue_dice=0.0811 nuclei_f1=0.0056 peak_vram=61.04GiB
+Epoch 011 batch 0000/0011 loss=4.1105
+Epoch 011 batch 0010/0011 loss=3.1369
+Epoch 011 loss=11.0959 tissue_dice=0.0907 nuclei_f1=0.0057 peak_vram=61.04GiB
+Epoch 012 batch 0000/0011 loss=3.9985
+Epoch 012 batch 0010/0011 loss=5.3359
+Epoch 012 loss=10.6195 tissue_dice=0.1019 nuclei_f1=0.0078 peak_vram=61.04GiB
+Epoch 013 batch 0000/0011 loss=3.9962
+Epoch 013 batch 0010/0011 loss=4.4504
+Epoch 013 loss=10.2279 tissue_dice=0.1107 nuclei_f1=0.0091 peak_vram=61.04GiB
+Epoch 014 batch 0000/0011 loss=3.9073
+Epoch 014 batch 0010/0011 loss=3.6704
+Epoch 014 loss=9.8904 tissue_dice=0.1222 nuclei_f1=0.0114 peak_vram=61.04GiB
+Epoch 015 batch 0000/0011 loss=3.9906
+Epoch 015 batch 0010/0011 loss=3.8770
+Epoch 015 loss=9.5888 tissue_dice=0.1315 nuclei_f1=0.0136 peak_vram=61.04GiB
+Epoch 016 batch 0000/0011 loss=3.9049
+Epoch 016 batch 0010/0011 loss=2.1950
+Epoch 016 loss=9.3152 tissue_dice=0.1431 nuclei_f1=0.0140 peak_vram=61.04GiB
+Epoch 017 batch 0000/0011 loss=3.7199
+Epoch 017 batch 0010/0011 loss=4.6321
+Epoch 017 loss=9.0646 tissue_dice=0.1558 nuclei_f1=0.0136 peak_vram=61.04GiB
+Epoch 018 batch 0000/0011 loss=3.0256
+Epoch 018 batch 0010/0011 loss=2.9158
+Epoch 018 loss=8.8422 tissue_dice=0.1666 nuclei_f1=0.0139 peak_vram=61.04GiB
+Epoch 019 batch 0000/0011 loss=3.3380
+Epoch 019 batch 0010/0011 loss=4.4369
+Epoch 019 loss=8.6329 tissue_dice=0.1770 nuclei_f1=0.0162 peak_vram=61.04GiB
+Epoch 020 batch 0000/0011 loss=2.9984
+Epoch 020 batch 0010/0011 loss=2.6030
+Epoch 020 loss=8.4330 tissue_dice=0.1886 nuclei_f1=0.0180 peak_vram=61.04GiB
+Epoch 021 batch 0000/0011 loss=2.8801
+Epoch 021 batch 0010/0011 loss=5.4652
+Epoch 021 loss=8.2550 tissue_dice=0.1995 nuclei_f1=0.0202 peak_vram=61.04GiB
+Epoch 022 batch 0000/0011 loss=3.6713
+Epoch 022 batch 0010/0011 loss=3.2541
+Epoch 022 loss=8.0837 tissue_dice=0.2096 nuclei_f1=0.0214 peak_vram=61.04GiB
+Epoch 023 batch 0000/0011 loss=2.6903
+Epoch 023 batch 0010/0011 loss=2.4603
+Epoch 023 loss=7.9331 tissue_dice=0.2204 nuclei_f1=0.0247 peak_vram=61.04GiB
+Epoch 024 batch 0000/0011 loss=2.5811
+Epoch 024 batch 0010/0011 loss=2.8077
+Epoch 024 loss=7.7928 tissue_dice=0.2302 nuclei_f1=0.0253 peak_vram=61.04GiB
+Epoch 025 batch 0000/0011 loss=3.5055
+Epoch 025 batch 0010/0011 loss=2.4398
+Epoch 025 loss=7.6569 tissue_dice=0.2412 nuclei_f1=0.0267 peak_vram=61.04GiB
+Epoch 026 batch 0000/0011 loss=2.3635
+Epoch 026 batch 0010/0011 loss=1.9173
+Epoch 026 loss=7.5264 tissue_dice=0.2518 nuclei_f1=0.0295 peak_vram=61.04GiB
+Epoch 027 batch 0000/0011 loss=2.8553
+Epoch 027 batch 0010/0011 loss=3.2489
+Epoch 027 loss=7.3993 tissue_dice=0.2625 nuclei_f1=0.0332 peak_vram=61.04GiB
+Epoch 028 batch 0000/0011 loss=3.0472
+Epoch 028 batch 0010/0011 loss=2.6939
+Epoch 028 loss=7.2789 tissue_dice=0.2740 nuclei_f1=0.0389 peak_vram=61.04GiB
+Epoch 029 batch 0000/0011 loss=2.9894
+Epoch 029 batch 0010/0011 loss=2.1924
+Epoch 029 loss=7.1628 tissue_dice=0.2850 nuclei_f1=0.0425 peak_vram=61.04GiB
+Epoch 030 batch 0000/0011 loss=2.4461
+Epoch 030 batch 0010/0011 loss=2.8176
+Epoch 030 loss=7.0528 tissue_dice=0.2965 nuclei_f1=0.0473 peak_vram=61.04GiB
+Epoch 031 batch 0000/0011 loss=3.3138
+Epoch 031 batch 0010/0011 loss=2.2414
+Epoch 031 loss=6.9494 tissue_dice=0.3061 nuclei_f1=0.0543 peak_vram=61.04GiB
+Epoch 032 batch 0000/0011 loss=2.2630
+Epoch 032 batch 0010/0011 loss=2.1701
+Epoch 032 loss=6.8483 tissue_dice=0.3177 nuclei_f1=0.0631 peak_vram=61.04GiB
+Epoch 033 batch 0000/0011 loss=2.4157
+Epoch 033 batch 0010/0011 loss=1.5513
+Epoch 033 loss=6.7532 tissue_dice=0.3306 nuclei_f1=0.0706 peak_vram=61.04GiB
+Epoch 034 batch 0000/0011 loss=2.0124
+Epoch 034 batch 0010/0011 loss=2.5824
+Epoch 034 loss=6.6624 tissue_dice=0.3422 nuclei_f1=0.0812 peak_vram=61.04GiB
+Epoch 035 batch 0000/0011 loss=2.4462
+Epoch 035 batch 0010/0011 loss=2.2670
+Epoch 035 loss=6.5744 tissue_dice=0.3531 nuclei_f1=0.0903 peak_vram=61.04GiB
+Epoch 036 batch 0000/0011 loss=2.2709
+Epoch 036 batch 0010/0011 loss=1.8518
+Epoch 036 loss=6.4886 tissue_dice=0.3647 nuclei_f1=0.0975 peak_vram=61.04GiB
+Epoch 037 batch 0000/0011 loss=2.2345
+Epoch 037 batch 0010/0011 loss=2.0622
+Epoch 037 loss=6.4074 tissue_dice=0.3751 nuclei_f1=0.1083 peak_vram=61.04GiB
+Epoch 038 batch 0000/0011 loss=2.0968
+Epoch 038 batch 0010/0011 loss=2.5916
+Epoch 038 loss=6.3301 tissue_dice=0.3837 nuclei_f1=0.1181 peak_vram=61.04GiB
+Epoch 039 batch 0000/0011 loss=2.5565
+Epoch 039 batch 0010/0011 loss=2.3843
+Epoch 039 loss=6.2548 tissue_dice=0.3929 nuclei_f1=0.1249 peak_vram=61.04GiB
+Epoch 040 batch 0000/0011 loss=2.0193
+Epoch 040 batch 0010/0011 loss=1.3035
+Epoch 040 loss=6.1857 tissue_dice=0.4014 nuclei_f1=0.1346 peak_vram=61.04GiB
+Epoch 041 batch 0000/0011 loss=2.1004
+Epoch 041 batch 0010/0011 loss=2.6094
+Epoch 041 loss=6.1168 tissue_dice=0.4094 nuclei_f1=0.1402 peak_vram=61.04GiB
+Epoch 042 batch 0000/0011 loss=2.1390
+Epoch 042 batch 0010/0011 loss=2.1794
+Epoch 042 loss=6.0488 tissue_dice=0.4172 nuclei_f1=0.1484 peak_vram=61.04GiB
+Epoch 043 batch 0000/0011 loss=2.0494
+Epoch 043 batch 0010/0011 loss=2.2920
+Epoch 043 loss=5.9819 tissue_dice=0.4252 nuclei_f1=0.1542 peak_vram=61.04GiB
+Epoch 044 batch 0000/0011 loss=1.8270
+Epoch 044 batch 0010/0011 loss=2.2311
+Epoch 044 loss=5.9179 tissue_dice=0.4323 nuclei_f1=0.1619 peak_vram=61.04GiB
+Epoch 045 batch 0000/0011 loss=2.0075
+Epoch 045 batch 0010/0011 loss=2.1699
+Epoch 045 loss=5.8571 tissue_dice=0.4391 nuclei_f1=0.1718 peak_vram=61.04GiB
+Epoch 046 batch 0000/0011 loss=1.6285
+Epoch 046 batch 0010/0011 loss=1.9492
+Epoch 046 loss=5.7977 tissue_dice=0.4447 nuclei_f1=0.1780 peak_vram=61.04GiB
+Epoch 047 batch 0000/0011 loss=1.6283
+Epoch 047 batch 0010/0011 loss=1.7014
+Epoch 047 loss=5.7397 tissue_dice=0.4500 nuclei_f1=0.1858 peak_vram=61.04GiB
+Epoch 048 batch 0000/0011 loss=1.9151
+Epoch 048 batch 0010/0011 loss=1.6464
+Epoch 048 loss=5.6859 tissue_dice=0.4544 nuclei_f1=0.1939 peak_vram=61.04GiB
+Epoch 049 batch 0000/0011 loss=1.5594
+Epoch 049 batch 0010/0011 loss=1.6448
+Epoch 049 loss=5.6355 tissue_dice=0.4581 nuclei_f1=0.2018 peak_vram=61.04GiB
+Epoch 050 batch 0000/0011 loss=1.5289
+Epoch 050 batch 0010/0011 loss=1.7893
+Epoch 050 loss=5.5864 tissue_dice=0.4615 nuclei_f1=0.2105 peak_vram=61.04GiB
+Epoch 051 batch 0000/0011 loss=1.5257
+Epoch 051 batch 0010/0011 loss=1.3649
+Epoch 051 loss=5.5372 tissue_dice=0.4650 nuclei_f1=0.2170 peak_vram=61.04GiB
+Epoch 052 batch 0000/0011 loss=1.7933
+Epoch 052 batch 0010/0011 loss=1.6792
+Epoch 052 loss=5.4928 tissue_dice=0.4676 nuclei_f1=0.2246 peak_vram=61.04GiB
+Epoch 053 batch 0000/0011 loss=1.5387
+Epoch 053 batch 0010/0011 loss=1.6744
+Epoch 053 loss=5.4482 tissue_dice=0.4703 nuclei_f1=0.2304 peak_vram=61.04GiB
+Epoch 054 batch 0000/0011 loss=1.6964
+Epoch 054 batch 0010/0011 loss=1.5974
+Epoch 054 loss=5.4051 tissue_dice=0.4730 nuclei_f1=0.2378 peak_vram=61.04GiB
+Epoch 055 batch 0000/0011 loss=1.5170
+Epoch 055 batch 0010/0011 loss=1.5020
+Epoch 055 loss=5.3634 tissue_dice=0.4756 nuclei_f1=0.2449 peak_vram=61.04GiB
+Epoch 056 batch 0000/0011 loss=1.5281
+Epoch 056 batch 0010/0011 loss=1.2425
+Epoch 056 loss=5.3233 tissue_dice=0.4781 nuclei_f1=0.2514 peak_vram=61.04GiB
+Epoch 057 batch 0000/0011 loss=1.5564
+Epoch 057 batch 0010/0011 loss=1.8538
+Epoch 057 loss=5.2851 tissue_dice=0.4804 nuclei_f1=0.2551 peak_vram=61.04GiB
+Epoch 058 batch 0000/0011 loss=1.6117
+Epoch 058 batch 0010/0011 loss=1.4871
+Epoch 058 loss=5.2474 tissue_dice=0.4827 nuclei_f1=0.2612 peak_vram=61.04GiB
+Epoch 059 batch 0000/0011 loss=1.3582
+Epoch 059 batch 0010/0011 loss=1.8611
+Epoch 059 loss=5.2125 tissue_dice=0.4846 nuclei_f1=0.2665 peak_vram=61.04GiB
+Epoch 060 batch 0000/0011 loss=1.5849
+Epoch 060 batch 0010/0011 loss=1.3972
+Epoch 060 loss=5.1796 tissue_dice=0.4865 nuclei_f1=0.2719 peak_vram=61.04GiB
+Epoch 061 batch 0000/0011 loss=1.5058
+Epoch 061 batch 0010/0011 loss=1.5454
+Epoch 061 loss=5.1435 tissue_dice=0.6111 nuclei_f1=0.2763 peak_vram=61.04GiB
+Epoch 062 batch 0000/0011 loss=1.3864
+Epoch 062 batch 0010/0011 loss=1.3778
+Epoch 062 loss=5.1094 tissue_dice=0.6138 nuclei_f1=0.2800 peak_vram=61.04GiB
+Epoch 063 batch 0000/0011 loss=1.2957
+Epoch 063 batch 0010/0011 loss=1.4712
+Epoch 063 loss=5.0750 tissue_dice=0.6167 nuclei_f1=0.2844 peak_vram=61.04GiB
+Epoch 064 batch 0000/0011 loss=1.4446
+Epoch 064 batch 0010/0011 loss=1.4687
+Epoch 064 loss=5.0464 tissue_dice=0.6186 nuclei_f1=0.2877 peak_vram=61.04GiB
+Epoch 065 batch 0000/0011 loss=1.3029
+Epoch 065 batch 0010/0011 loss=1.2642
+Epoch 065 loss=5.0204 tissue_dice=0.6202 nuclei_f1=0.2940 peak_vram=61.04GiB
+Epoch 066 batch 0000/0011 loss=1.2474
+Epoch 066 batch 0010/0011 loss=1.1555
+Epoch 066 loss=4.9967 tissue_dice=0.6217 nuclei_f1=0.2984 peak_vram=61.04GiB
+Epoch 067 batch 0000/0011 loss=1.3948
+Epoch 067 batch 0010/0011 loss=1.3144
+Epoch 067 loss=4.9731 tissue_dice=0.6233 nuclei_f1=0.3056 peak_vram=61.04GiB
+Epoch 068 batch 0000/0011 loss=1.3664
+Epoch 068 batch 0010/0011 loss=0.9828
+Epoch 068 loss=4.9502 tissue_dice=0.6249 nuclei_f1=0.3097 peak_vram=61.04GiB
+Epoch 069 batch 0000/0011 loss=1.4050
+Epoch 069 batch 0010/0011 loss=1.1567
+Epoch 069 loss=4.9267 tissue_dice=0.6266 nuclei_f1=0.3109 peak_vram=61.04GiB
+Epoch 070 batch 0000/0011 loss=1.3426
+Epoch 070 batch 0010/0011 loss=1.3370
+Epoch 070 loss=4.9043 tissue_dice=0.6282 nuclei_f1=0.3143 peak_vram=61.04GiB
+Epoch 071 batch 0000/0011 loss=1.3207
+Epoch 071 batch 0010/0011 loss=1.0913
+Epoch 071 loss=4.8838 tissue_dice=0.6297 nuclei_f1=0.3166 peak_vram=61.04GiB
+Epoch 072 batch 0000/0011 loss=1.2881
+Epoch 072 batch 0010/0011 loss=1.4613
+Epoch 072 loss=4.8646 tissue_dice=0.6312 nuclei_f1=0.3185 peak_vram=61.04GiB
+Epoch 073 batch 0000/0011 loss=1.2543
+Epoch 073 batch 0010/0011 loss=1.3383
+Epoch 073 loss=4.8459 tissue_dice=0.6325 nuclei_f1=0.3200 peak_vram=61.04GiB
+Epoch 074 batch 0000/0011 loss=1.1458
+Epoch 074 batch 0010/0011 loss=1.4204
+Epoch 074 loss=4.8267 tissue_dice=0.6339 nuclei_f1=0.3221 peak_vram=61.04GiB
+Epoch 075 batch 0000/0011 loss=1.2524
+Epoch 075 batch 0010/0011 loss=0.8248
+Epoch 075 loss=4.8079 tissue_dice=0.6353 nuclei_f1=0.3245 peak_vram=61.04GiB
+Epoch 076 batch 0000/0011 loss=1.1538
+Epoch 076 batch 0010/0011 loss=1.4662
+Epoch 076 loss=4.7905 tissue_dice=0.6365 nuclei_f1=0.3260 peak_vram=61.04GiB
+Epoch 077 batch 0000/0011 loss=1.2213
+Epoch 077 batch 0010/0011 loss=1.2799
+Epoch 077 loss=4.7713 tissue_dice=0.6379 nuclei_f1=0.3284 peak_vram=61.04GiB
+Epoch 078 batch 0000/0011 loss=1.2199
+Epoch 078 batch 0010/0011 loss=1.5977
+Epoch 078 loss=4.7546 tissue_dice=0.6389 nuclei_f1=0.3319 peak_vram=61.04GiB
+Epoch 079 batch 0000/0011 loss=1.1251
+Epoch 079 batch 0010/0011 loss=1.2267
+Epoch 079 loss=4.7389 tissue_dice=0.6399 nuclei_f1=0.3329 peak_vram=61.04GiB
+Epoch 080 batch 0000/0011 loss=1.2217
+Epoch 080 batch 0010/0011 loss=1.2768
+Epoch 080 loss=4.7233 tissue_dice=0.6409 nuclei_f1=0.3383 peak_vram=61.04GiB
+Epoch 081 batch 0000/0011 loss=1.3209
+Epoch 081 batch 0010/0011 loss=1.1440
+Epoch 081 loss=4.7083 tissue_dice=0.6418 nuclei_f1=0.3396 peak_vram=61.04GiB
+Epoch 082 batch 0000/0011 loss=1.3243
+Epoch 082 batch 0010/0011 loss=0.9544
+Epoch 082 loss=4.6957 tissue_dice=0.6427 nuclei_f1=0.3391 peak_vram=61.04GiB
+Epoch 083 batch 0000/0011 loss=1.1615
+Epoch 083 batch 0010/0011 loss=1.0921
+Epoch 083 loss=4.6827 tissue_dice=0.6436 nuclei_f1=0.3402 peak_vram=61.04GiB
+Epoch 084 batch 0000/0011 loss=1.3728
+Epoch 084 batch 0010/0011 loss=1.0273
+Epoch 084 loss=4.6714 tissue_dice=0.6444 nuclei_f1=0.3411 peak_vram=61.04GiB
+Epoch 085 batch 0000/0011 loss=1.2756
+Epoch 085 batch 0010/0011 loss=1.2233
+Epoch 085 loss=4.6595 tissue_dice=0.6452 nuclei_f1=0.3435 peak_vram=61.04GiB
+Epoch 086 batch 0000/0011 loss=1.2177
+Epoch 086 batch 0010/0011 loss=0.8034
+Epoch 086 loss=4.6481 tissue_dice=0.6460 nuclei_f1=0.3447 peak_vram=61.04GiB
+Epoch 087 batch 0000/0011 loss=1.1857
+Epoch 087 batch 0010/0011 loss=1.2833
+Epoch 087 loss=4.6384 tissue_dice=0.6467 nuclei_f1=0.3458 peak_vram=61.04GiB
+Epoch 088 batch 0000/0011 loss=1.1468
+Epoch 088 batch 0010/0011 loss=0.9695
+Epoch 088 loss=4.6289 tissue_dice=0.6475 nuclei_f1=0.3464 peak_vram=61.04GiB
+Epoch 089 batch 0000/0011 loss=1.7545
+Epoch 089 batch 0010/0011 loss=1.3552
+Epoch 089 loss=4.6206 tissue_dice=0.6482 nuclei_f1=0.3467 peak_vram=61.04GiB
+Epoch 090 batch 0000/0011 loss=1.2628
+Epoch 090 batch 0010/0011 loss=1.1694
+Epoch 090 loss=4.6122 tissue_dice=0.6490 nuclei_f1=0.3474 peak_vram=61.04GiB
+Epoch 091 batch 0000/0011 loss=1.1068
+Epoch 091 batch 0010/0011 loss=1.2919
+Epoch 091 loss=4.6047 tissue_dice=0.6497 nuclei_f1=0.3484 peak_vram=61.04GiB
+Epoch 092 batch 0000/0011 loss=1.1154
+Epoch 092 batch 0010/0011 loss=1.0442
+Epoch 092 loss=4.5969 tissue_dice=0.6504 nuclei_f1=0.3491 peak_vram=61.04GiB
+Epoch 093 batch 0000/0011 loss=1.1093
+Epoch 093 batch 0010/0011 loss=1.1949
+Epoch 093 loss=4.5888 tissue_dice=0.6512 nuclei_f1=0.3494 peak_vram=61.04GiB
+Epoch 094 batch 0000/0011 loss=1.3920
+Epoch 094 batch 0010/0011 loss=1.0922
+Epoch 094 loss=4.5815 tissue_dice=0.6520 nuclei_f1=0.3494 peak_vram=61.04GiB
+Epoch 095 batch 0000/0011 loss=1.0306
+Epoch 095 batch 0010/0011 loss=1.5514
+Epoch 095 loss=4.5746 tissue_dice=0.6527 nuclei_f1=0.3507 peak_vram=61.04GiB
+Epoch 096 batch 0000/0011 loss=1.0834
+Epoch 096 batch 0010/0011 loss=1.1592
+Epoch 096 loss=4.5683 tissue_dice=0.6535 nuclei_f1=0.3516 peak_vram=61.04GiB
+Epoch 097 batch 0000/0011 loss=1.1838
+Epoch 097 batch 0010/0011 loss=1.0986
+Epoch 097 loss=4.5623 tissue_dice=0.6543 nuclei_f1=0.3481 peak_vram=61.04GiB
+Epoch 098 batch 0000/0011 loss=1.2098
+Epoch 098 batch 0010/0011 loss=1.3862
+Epoch 098 loss=4.5568 tissue_dice=0.6551 nuclei_f1=0.3495 peak_vram=61.04GiB
+Epoch 099 batch 0000/0011 loss=1.0928
+Epoch 099 batch 0010/0011 loss=0.9045
+Epoch 099 loss=4.5520 tissue_dice=0.6558 nuclei_f1=0.3492 peak_vram=61.04GiB
+Fold 1: best nuclei_f1=0.3516  best tissue_dice=0.6558
+
+===== Fold 3/5 =====
+Pretrained backbone: loaded 196/196 encoder tensors from timm 'convnextv2_tiny'.
+Computing inverse-frequency class weights (one pass over the training data)...
+  tissue weights: [2.935, 0.016, 0.042, 0.367, 0.838, 1.801]
+  nuclei weights: [0.02, 0.283, 0.704, 0.165, 1.738, 0.054, 2.211, 3.718, 0.689, 0.418]
+Epoch 000 batch 0000/0011 loss=39.1274
+Epoch 000 batch 0010/0011 loss=11.1075
+Epoch 000 loss=28.4318 tissue_dice=0.0161 nuclei_f1=0.0006 peak_vram=61.04GiB
+Epoch 001 batch 0000/0011 loss=10.2648
+Epoch 001 batch 0010/0011 loss=7.7813
+Epoch 001 loss=26.1480 tissue_dice=0.0172 nuclei_f1=0.0006 peak_vram=61.04GiB
+Epoch 002 batch 0000/0011 loss=8.2264
+Epoch 002 batch 0010/0011 loss=7.1960
+Epoch 002 loss=23.3167 tissue_dice=0.0182 nuclei_f1=0.0006 peak_vram=61.04GiB
+Epoch 003 batch 0000/0011 loss=7.3536
+Epoch 003 batch 0010/0011 loss=5.7499
+Epoch 003 loss=20.7483 tissue_dice=0.0195 nuclei_f1=0.0006 peak_vram=61.04GiB
+Epoch 004 batch 0000/0011 loss=6.2438
+Epoch 004 batch 0010/0011 loss=6.4815
+Epoch 004 loss=18.6864 tissue_dice=0.0206 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 005 batch 0000/0011 loss=5.1108
+Epoch 005 batch 0010/0011 loss=4.7398
+Epoch 005 loss=17.0596 tissue_dice=0.0223 nuclei_f1=0.0009 peak_vram=61.04GiB
+Epoch 006 batch 0000/0011 loss=4.2432
+Epoch 006 batch 0010/0011 loss=4.3862
+Epoch 006 loss=15.7259 tissue_dice=0.0241 nuclei_f1=0.0010 peak_vram=61.04GiB
+Epoch 007 batch 0000/0011 loss=5.3886
+Epoch 007 batch 0010/0011 loss=4.4807
+Epoch 007 loss=14.6301 tissue_dice=0.0269 nuclei_f1=0.0010 peak_vram=61.04GiB
+Epoch 008 batch 0000/0011 loss=4.8327
+Epoch 008 batch 0010/0011 loss=4.2532
+Epoch 008 loss=13.7018 tissue_dice=0.0302 nuclei_f1=0.0011 peak_vram=61.04GiB
+Epoch 009 batch 0000/0011 loss=4.0326
+Epoch 009 batch 0010/0011 loss=4.9248
+Epoch 009 loss=12.9254 tissue_dice=0.0343 nuclei_f1=0.0018 peak_vram=61.04GiB
+Epoch 010 batch 0000/0011 loss=3.9844
+Epoch 010 batch 0010/0011 loss=3.9464
+Epoch 010 loss=12.2907 tissue_dice=0.0388 nuclei_f1=0.0017 peak_vram=61.04GiB
+Epoch 011 batch 0000/0011 loss=3.8169
+Epoch 011 batch 0010/0011 loss=3.1634
+Epoch 011 loss=11.7397 tissue_dice=0.0446 nuclei_f1=0.0048 peak_vram=61.04GiB
+Epoch 012 batch 0000/0011 loss=3.9853
+Epoch 012 batch 0010/0011 loss=4.4976
+Epoch 012 loss=11.2600 tissue_dice=0.0517 nuclei_f1=0.0054 peak_vram=61.04GiB
+Epoch 013 batch 0000/0011 loss=3.4713
+Epoch 013 batch 0010/0011 loss=4.1609
+Epoch 013 loss=10.8568 tissue_dice=0.0593 nuclei_f1=0.0063 peak_vram=61.04GiB
+Epoch 014 batch 0000/0011 loss=3.8233
+Epoch 014 batch 0010/0011 loss=5.8469
+Epoch 014 loss=10.5255 tissue_dice=0.0675 nuclei_f1=0.0074 peak_vram=61.04GiB
+Epoch 015 batch 0000/0011 loss=3.2219
+Epoch 015 batch 0010/0011 loss=2.7799
+Epoch 015 loss=10.2267 tissue_dice=0.0773 nuclei_f1=0.0079 peak_vram=61.04GiB
+Epoch 016 batch 0000/0011 loss=3.2391
+Epoch 016 batch 0010/0011 loss=3.6342
+Epoch 016 loss=9.9434 tissue_dice=0.0885 nuclei_f1=0.0096 peak_vram=61.04GiB
+Epoch 017 batch 0000/0011 loss=3.1044
+Epoch 017 batch 0010/0011 loss=3.2375
+Epoch 017 loss=9.7010 tissue_dice=0.1026 nuclei_f1=0.0086 peak_vram=61.04GiB
+Epoch 018 batch 0000/0011 loss=2.7878
+Epoch 018 batch 0010/0011 loss=2.4058
+Epoch 018 loss=9.4792 tissue_dice=0.1147 nuclei_f1=0.0100 peak_vram=61.04GiB
+Epoch 019 batch 0000/0011 loss=2.6232
+Epoch 019 batch 0010/0011 loss=2.5286
+Epoch 019 loss=9.2722 tissue_dice=0.1287 nuclei_f1=0.0125 peak_vram=61.04GiB
+Epoch 020 batch 0000/0011 loss=3.1653
+Epoch 020 batch 0010/0011 loss=2.8174
+Epoch 020 loss=9.0883 tissue_dice=0.1405 nuclei_f1=0.0148 peak_vram=61.04GiB
+Epoch 021 batch 0000/0011 loss=2.9827
+Epoch 021 batch 0010/0011 loss=3.1608
+Epoch 021 loss=8.9170 tissue_dice=0.1523 nuclei_f1=0.0159 peak_vram=61.04GiB
+Epoch 022 batch 0000/0011 loss=3.0526
+Epoch 022 batch 0010/0011 loss=3.5146
+Epoch 022 loss=8.7565 tissue_dice=0.1644 nuclei_f1=0.0176 peak_vram=61.04GiB
+Epoch 023 batch 0000/0011 loss=3.1394
+Epoch 023 batch 0010/0011 loss=2.8694
+Epoch 023 loss=8.6017 tissue_dice=0.1754 nuclei_f1=0.0189 peak_vram=61.04GiB
+Epoch 024 batch 0000/0011 loss=2.6262
+Epoch 024 batch 0010/0011 loss=2.2928
+Epoch 024 loss=8.4601 tissue_dice=0.1856 nuclei_f1=0.0229 peak_vram=61.04GiB
+Epoch 025 batch 0000/0011 loss=2.9068
+Epoch 025 batch 0010/0011 loss=2.6913
+Epoch 025 loss=8.3260 tissue_dice=0.1960 nuclei_f1=0.0265 peak_vram=61.04GiB
+Epoch 026 batch 0000/0011 loss=2.8346
+Epoch 026 batch 0010/0011 loss=2.5878
+Epoch 026 loss=8.1983 tissue_dice=0.2053 nuclei_f1=0.0302 peak_vram=61.04GiB
+Epoch 027 batch 0000/0011 loss=2.2931
+Epoch 027 batch 0010/0011 loss=2.4677
+Epoch 027 loss=8.0805 tissue_dice=0.2142 nuclei_f1=0.0362 peak_vram=61.04GiB
+Epoch 028 batch 0000/0011 loss=2.7464
+Epoch 028 batch 0010/0011 loss=2.2713
+Epoch 028 loss=7.9662 tissue_dice=0.2233 nuclei_f1=0.0414 peak_vram=61.04GiB
+Epoch 029 batch 0000/0011 loss=2.2966
+Epoch 029 batch 0010/0011 loss=1.9383
+Epoch 029 loss=7.8594 tissue_dice=0.2321 nuclei_f1=0.0474 peak_vram=61.04GiB
+Epoch 030 batch 0000/0011 loss=2.4311
+Epoch 030 batch 0010/0011 loss=4.0477
+Epoch 030 loss=7.7563 tissue_dice=0.2406 nuclei_f1=0.0542 peak_vram=61.04GiB
+Epoch 031 batch 0000/0011 loss=2.5480
+Epoch 031 batch 0010/0011 loss=2.3711
+Epoch 031 loss=7.6586 tissue_dice=0.2496 nuclei_f1=0.0627 peak_vram=61.04GiB
+Epoch 032 batch 0000/0011 loss=2.0788
+Epoch 032 batch 0010/0011 loss=1.8689
+Epoch 032 loss=7.5591 tissue_dice=0.2587 nuclei_f1=0.0698 peak_vram=61.04GiB
+Epoch 033 batch 0000/0011 loss=1.8788
+Epoch 033 batch 0010/0011 loss=2.0211
+Epoch 033 loss=7.4646 tissue_dice=0.2676 nuclei_f1=0.0785 peak_vram=61.04GiB
+Epoch 034 batch 0000/0011 loss=2.1099
+Epoch 034 batch 0010/0011 loss=2.0372
+Epoch 034 loss=7.3760 tissue_dice=0.2766 nuclei_f1=0.0869 peak_vram=61.04GiB
+Epoch 035 batch 0000/0011 loss=2.0109
+Epoch 035 batch 0010/0011 loss=2.0357
+Epoch 035 loss=7.2943 tissue_dice=0.2865 nuclei_f1=0.0944 peak_vram=61.04GiB
+Epoch 036 batch 0000/0011 loss=2.1338
+Epoch 036 batch 0010/0011 loss=1.9394
+Epoch 036 loss=7.2137 tissue_dice=0.2950 nuclei_f1=0.1019 peak_vram=61.04GiB
+Epoch 037 batch 0000/0011 loss=2.0872
+Epoch 037 batch 0010/0011 loss=2.6402
+Epoch 037 loss=7.1344 tissue_dice=0.3025 nuclei_f1=0.1096 peak_vram=61.04GiB
+Epoch 038 batch 0000/0011 loss=2.0584
+Epoch 038 batch 0010/0011 loss=2.1520
+Epoch 038 loss=7.0614 tissue_dice=0.3108 nuclei_f1=0.1182 peak_vram=61.04GiB
+Epoch 039 batch 0000/0011 loss=2.0264
+Epoch 039 batch 0010/0011 loss=2.6092
+Epoch 039 loss=6.9929 tissue_dice=0.3179 nuclei_f1=0.1257 peak_vram=61.04GiB
+Epoch 040 batch 0000/0011 loss=2.1956
+Epoch 040 batch 0010/0011 loss=2.0664
+Epoch 040 loss=6.9318 tissue_dice=0.3248 nuclei_f1=0.1338 peak_vram=61.04GiB
+Epoch 041 batch 0000/0011 loss=1.9197
+Epoch 041 batch 0010/0011 loss=1.7125
+Epoch 041 loss=6.8742 tissue_dice=0.3309 nuclei_f1=0.1450 peak_vram=61.04GiB
+Epoch 042 batch 0000/0011 loss=1.8459
+Epoch 042 batch 0010/0011 loss=1.7329
+Epoch 042 loss=6.8223 tissue_dice=0.3374 nuclei_f1=0.1515 peak_vram=61.04GiB
+Epoch 043 batch 0000/0011 loss=1.9205
+Epoch 043 batch 0010/0011 loss=2.0140
+Epoch 043 loss=6.7729 tissue_dice=0.3434 nuclei_f1=0.1565 peak_vram=61.04GiB
+Epoch 044 batch 0000/0011 loss=1.9171
+Epoch 044 batch 0010/0011 loss=1.3936
+Epoch 044 loss=6.7250 tissue_dice=0.3496 nuclei_f1=0.1635 peak_vram=61.04GiB
+Epoch 045 batch 0000/0011 loss=1.7211
+Epoch 045 batch 0010/0011 loss=2.0612
+Epoch 045 loss=6.6766 tissue_dice=0.3561 nuclei_f1=0.1716 peak_vram=61.04GiB
+Epoch 046 batch 0000/0011 loss=1.7733
+Epoch 046 batch 0010/0011 loss=1.6592
+Epoch 046 loss=6.6336 tissue_dice=0.3625 nuclei_f1=0.1794 peak_vram=61.04GiB
+Epoch 047 batch 0000/0011 loss=1.8160
+Epoch 047 batch 0010/0011 loss=1.9318
+Epoch 047 loss=6.5954 tissue_dice=0.3687 nuclei_f1=0.1866 peak_vram=61.04GiB
+Epoch 048 batch 0000/0011 loss=1.8093
+Epoch 048 batch 0010/0011 loss=1.8171
+Epoch 048 loss=6.5593 tissue_dice=0.3748 nuclei_f1=0.1909 peak_vram=61.04GiB
+Epoch 049 batch 0000/0011 loss=1.4838
+Epoch 049 batch 0010/0011 loss=1.6544
+Epoch 049 loss=6.5271 tissue_dice=0.3808 nuclei_f1=0.1990 peak_vram=61.04GiB
+Epoch 050 batch 0000/0011 loss=1.4518
+Epoch 050 batch 0010/0011 loss=1.6584
+Epoch 050 loss=6.4965 tissue_dice=0.3872 nuclei_f1=0.2044 peak_vram=61.04GiB
+Epoch 051 batch 0000/0011 loss=1.7103
+Epoch 051 batch 0010/0011 loss=1.6816
+Epoch 051 loss=6.4695 tissue_dice=0.3936 nuclei_f1=0.2104 peak_vram=61.04GiB
+Epoch 052 batch 0000/0011 loss=1.3981
+Epoch 052 batch 0010/0011 loss=1.7413
+Epoch 052 loss=6.4449 tissue_dice=0.3999 nuclei_f1=0.2156 peak_vram=61.04GiB
+Epoch 053 batch 0000/0011 loss=1.4481
+Epoch 053 batch 0010/0011 loss=1.8740
+Epoch 053 loss=6.4205 tissue_dice=0.4060 nuclei_f1=0.2226 peak_vram=61.04GiB
+Epoch 054 batch 0000/0011 loss=1.5971
+Epoch 054 batch 0010/0011 loss=1.4118
+Epoch 054 loss=6.3984 tissue_dice=0.4122 nuclei_f1=0.2285 peak_vram=61.04GiB
+Epoch 055 batch 0000/0011 loss=1.5610
+Epoch 055 batch 0010/0011 loss=1.4272
+Epoch 055 loss=6.3815 tissue_dice=0.4179 nuclei_f1=0.2329 peak_vram=61.04GiB
+Epoch 056 batch 0000/0011 loss=1.5007
+Epoch 056 batch 0010/0011 loss=1.3607
+Epoch 056 loss=6.3642 tissue_dice=0.4243 nuclei_f1=0.2363 peak_vram=61.04GiB
+Epoch 057 batch 0000/0011 loss=1.6323
+Epoch 057 batch 0010/0011 loss=2.4132
+Epoch 057 loss=6.3491 tissue_dice=0.4299 nuclei_f1=0.2420 peak_vram=61.04GiB
+Epoch 058 batch 0000/0011 loss=1.5499
+Epoch 058 batch 0010/0011 loss=1.5147
+Epoch 058 loss=6.3382 tissue_dice=0.4350 nuclei_f1=0.2474 peak_vram=61.04GiB
+Epoch 059 batch 0000/0011 loss=1.5041
+Epoch 059 batch 0010/0011 loss=1.5858
+Epoch 059 loss=6.3285 tissue_dice=0.4399 nuclei_f1=0.2513 peak_vram=61.04GiB
+Epoch 060 batch 0000/0011 loss=1.5328
+Epoch 060 batch 0010/0011 loss=1.3566
+Epoch 060 loss=6.3225 tissue_dice=0.4446 nuclei_f1=0.2550 peak_vram=61.04GiB
+Epoch 061 batch 0000/0011 loss=1.3461
+Epoch 061 batch 0010/0011 loss=1.2295
+Epoch 061 loss=6.3135 tissue_dice=0.4492 nuclei_f1=0.2593 peak_vram=61.04GiB
+Epoch 062 batch 0000/0011 loss=1.2967
+Epoch 062 batch 0010/0011 loss=1.6402
+Epoch 062 loss=6.3093 tissue_dice=0.4533 nuclei_f1=0.2632 peak_vram=61.04GiB
+Epoch 063 batch 0000/0011 loss=1.2911
+Epoch 063 batch 0010/0011 loss=1.8270
+Epoch 063 loss=6.3073 tissue_dice=0.4573 nuclei_f1=0.2670 peak_vram=61.04GiB
+Epoch 064 batch 0000/0011 loss=1.2226
+Epoch 064 batch 0010/0011 loss=1.1553
+Epoch 064 loss=6.3053 tissue_dice=0.4608 nuclei_f1=0.2705 peak_vram=61.04GiB
+Epoch 065 batch 0000/0011 loss=1.3183
+Epoch 065 batch 0010/0011 loss=1.3185
+Epoch 065 loss=6.3058 tissue_dice=0.4642 nuclei_f1=0.2733 peak_vram=61.04GiB
+Epoch 066 batch 0000/0011 loss=1.2267
+Epoch 066 batch 0010/0011 loss=1.2770
+Epoch 066 loss=6.3105 tissue_dice=0.4673 nuclei_f1=0.2765 peak_vram=61.04GiB
+Epoch 067 batch 0000/0011 loss=1.2347
+Epoch 067 batch 0010/0011 loss=1.2742
+Epoch 067 loss=6.3141 tissue_dice=0.4700 nuclei_f1=0.2812 peak_vram=61.04GiB
+Epoch 068 batch 0000/0011 loss=1.2718
+Epoch 068 batch 0010/0011 loss=1.2678
+Epoch 068 loss=6.3208 tissue_dice=0.4727 nuclei_f1=0.2840 peak_vram=61.04GiB
+Epoch 069 batch 0000/0011 loss=1.1533
+Epoch 069 batch 0010/0011 loss=1.3423
+Epoch 069 loss=6.3268 tissue_dice=0.4751 nuclei_f1=0.2869 peak_vram=61.04GiB
+Epoch 070 batch 0000/0011 loss=1.3758
+Epoch 070 batch 0010/0011 loss=1.0949
+Epoch 070 loss=6.3334 tissue_dice=0.4773 nuclei_f1=0.2897 peak_vram=61.04GiB
+Epoch 071 batch 0000/0011 loss=1.2122
+Epoch 071 batch 0010/0011 loss=1.0638
+Epoch 071 loss=6.3426 tissue_dice=0.4793 nuclei_f1=0.2942 peak_vram=61.04GiB
+Epoch 072 batch 0000/0011 loss=1.1765
+Epoch 072 batch 0010/0011 loss=1.4193
+Epoch 072 loss=6.3532 tissue_dice=0.4810 nuclei_f1=0.3010 peak_vram=61.04GiB
+Epoch 073 batch 0000/0011 loss=1.3742
+Epoch 073 batch 0010/0011 loss=1.3096
+Epoch 073 loss=6.3651 tissue_dice=0.4824 nuclei_f1=0.3024 peak_vram=61.04GiB
+Epoch 074 batch 0000/0011 loss=1.1203
+Epoch 074 batch 0010/0011 loss=1.2899
+Epoch 074 loss=6.3795 tissue_dice=0.4838 nuclei_f1=0.3051 peak_vram=61.04GiB
+Epoch 075 batch 0000/0011 loss=1.2004
+Epoch 075 batch 0010/0011 loss=1.0294
+Epoch 075 loss=6.3930 tissue_dice=0.4852 nuclei_f1=0.3097 peak_vram=61.04GiB
+Epoch 076 batch 0000/0011 loss=1.2540
+Epoch 076 batch 0010/0011 loss=1.2994
+Epoch 076 loss=6.4068 tissue_dice=0.4865 nuclei_f1=0.3114 peak_vram=61.04GiB
+Epoch 077 batch 0000/0011 loss=1.0869
+Epoch 077 batch 0010/0011 loss=1.2823
+Epoch 077 loss=6.4200 tissue_dice=0.4878 nuclei_f1=0.3121 peak_vram=61.04GiB
+Epoch 078 batch 0000/0011 loss=1.1479
+Epoch 078 batch 0010/0011 loss=1.2311
+Epoch 078 loss=6.4337 tissue_dice=0.4889 nuclei_f1=0.3170 peak_vram=61.04GiB
+Epoch 079 batch 0000/0011 loss=1.0932
+Epoch 079 batch 0010/0011 loss=1.1028
+Epoch 079 loss=6.4517 tissue_dice=0.4899 nuclei_f1=0.3210 peak_vram=61.04GiB
+Epoch 080 batch 0000/0011 loss=1.2842
+Epoch 080 batch 0010/0011 loss=1.2092
+Epoch 080 loss=6.4691 tissue_dice=0.4909 nuclei_f1=0.3215 peak_vram=61.04GiB
+Epoch 081 batch 0000/0011 loss=1.2476
+Epoch 081 batch 0010/0011 loss=1.8138
+Epoch 081 loss=6.4877 tissue_dice=0.4917 nuclei_f1=0.3227 peak_vram=61.04GiB
+Epoch 082 batch 0000/0011 loss=1.0941
+Epoch 082 batch 0010/0011 loss=1.1251
+Epoch 082 loss=6.5061 tissue_dice=0.4925 nuclei_f1=0.3251 peak_vram=61.04GiB
+Epoch 083 batch 0000/0011 loss=1.0635
+Epoch 083 batch 0010/0011 loss=1.1686
+Epoch 083 loss=6.5249 tissue_dice=0.4932 nuclei_f1=0.3265 peak_vram=61.04GiB
+Epoch 084 batch 0000/0011 loss=1.1925
+Epoch 084 batch 0010/0011 loss=1.2738
+Epoch 084 loss=6.5421 tissue_dice=0.4940 nuclei_f1=0.3276 peak_vram=61.04GiB
+Epoch 085 batch 0000/0011 loss=1.1052
+Epoch 085 batch 0010/0011 loss=1.2898
+Epoch 085 loss=6.5603 tissue_dice=0.4947 nuclei_f1=0.3347 peak_vram=61.04GiB
+Epoch 086 batch 0000/0011 loss=1.1028
+Epoch 086 batch 0010/0011 loss=1.0482
+Epoch 086 loss=6.5797 tissue_dice=0.4953 nuclei_f1=0.3358 peak_vram=61.04GiB
+Epoch 087 batch 0000/0011 loss=1.1202
+Epoch 087 batch 0010/0011 loss=1.0368
+Epoch 087 loss=6.5991 tissue_dice=0.4960 nuclei_f1=0.3371 peak_vram=61.04GiB
+Epoch 088 batch 0000/0011 loss=1.2166
+Epoch 088 batch 0010/0011 loss=1.4237
+Epoch 088 loss=6.6193 tissue_dice=0.4967 nuclei_f1=0.3365 peak_vram=61.04GiB
+Epoch 089 batch 0000/0011 loss=1.2997
+Epoch 089 batch 0010/0011 loss=1.0786
+Epoch 089 loss=6.6408 tissue_dice=0.4973 nuclei_f1=0.3387 peak_vram=61.04GiB
+Epoch 090 batch 0000/0011 loss=1.2000
+Epoch 090 batch 0010/0011 loss=1.1702
+Epoch 090 loss=6.6641 tissue_dice=0.4979 nuclei_f1=0.3455 peak_vram=61.04GiB
+Epoch 091 batch 0000/0011 loss=1.0417
+Epoch 091 batch 0010/0011 loss=0.9979
+Epoch 091 loss=6.6857 tissue_dice=0.4988 nuclei_f1=0.3462 peak_vram=61.04GiB
+Epoch 092 batch 0000/0011 loss=1.1014
+Epoch 092 batch 0010/0011 loss=0.9572
+Epoch 092 loss=6.7067 tissue_dice=0.4998 nuclei_f1=0.3476 peak_vram=61.04GiB
+Epoch 093 batch 0000/0011 loss=1.0232
+Epoch 093 batch 0010/0011 loss=1.3052
+Epoch 093 loss=6.7285 tissue_dice=0.5008 nuclei_f1=0.3503 peak_vram=61.04GiB
+Epoch 094 batch 0000/0011 loss=1.1384
+Epoch 094 batch 0010/0011 loss=0.9843
+Epoch 094 loss=6.7506 tissue_dice=0.5017 nuclei_f1=0.3512 peak_vram=61.04GiB
+Epoch 095 batch 0000/0011 loss=1.0658
+Epoch 095 batch 0010/0011 loss=0.9859
+Epoch 095 loss=6.7734 tissue_dice=0.5026 nuclei_f1=0.3508 peak_vram=61.04GiB
+Epoch 096 batch 0000/0011 loss=0.9956
+Epoch 096 batch 0010/0011 loss=1.0153
+Epoch 096 loss=6.7969 tissue_dice=0.5034 nuclei_f1=0.3518 peak_vram=61.04GiB
+Epoch 097 batch 0000/0011 loss=1.1612
+Epoch 097 batch 0010/0011 loss=1.1953
+Epoch 097 loss=6.8203 tissue_dice=0.5043 nuclei_f1=0.3535 peak_vram=61.04GiB
+Epoch 098 batch 0000/0011 loss=1.1847
+Epoch 098 batch 0010/0011 loss=1.0864
+Epoch 098 loss=6.8433 tissue_dice=0.5052 nuclei_f1=0.3579 peak_vram=61.04GiB
+Epoch 099 batch 0000/0011 loss=1.0603
+Epoch 099 batch 0010/0011 loss=0.9406
+Epoch 099 loss=6.8677 tissue_dice=0.5063 nuclei_f1=0.3595 peak_vram=61.04GiB
+Fold 2: best nuclei_f1=0.3595  best tissue_dice=0.5063
+
+===== Fold 4/5 =====
+Pretrained backbone: loaded 196/196 encoder tensors from timm 'convnextv2_tiny'.
+Computing inverse-frequency class weights (one pass over the training data)...
+  tissue weights: [3.662, 0.012, 0.032, 0.329, 0.832, 1.133]
+  nuclei weights: [0.023, 0.351, 0.759, 0.19, 1.813, 0.063, 2.366, 3.023, 0.875, 0.537]
+Epoch 000 batch 0000/0011 loss=39.4293
+Epoch 000 batch 0010/0011 loss=10.6144
+Epoch 000 loss=29.2709 tissue_dice=0.0287 nuclei_f1=0.0009 peak_vram=61.04GiB
+Epoch 001 batch 0000/0011 loss=10.3858
+Epoch 001 batch 0010/0011 loss=8.0983
+Epoch 001 loss=26.9709 tissue_dice=0.0301 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 002 batch 0000/0011 loss=7.6086
+Epoch 002 batch 0010/0011 loss=6.7184
+Epoch 002 loss=24.1361 tissue_dice=0.0321 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 003 batch 0000/0011 loss=7.3361
+Epoch 003 batch 0010/0011 loss=6.0259
+Epoch 003 loss=21.5615 tissue_dice=0.0339 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 004 batch 0000/0011 loss=6.8947
+Epoch 004 batch 0010/0011 loss=5.6345
+Epoch 004 loss=19.4409 tissue_dice=0.0369 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 005 batch 0000/0011 loss=5.7803
+Epoch 005 batch 0010/0011 loss=3.5967
+Epoch 005 loss=17.8129 tissue_dice=0.0396 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 006 batch 0000/0011 loss=5.2963
+Epoch 006 batch 0010/0011 loss=4.6902
+Epoch 006 loss=16.4185 tissue_dice=0.0427 nuclei_f1=0.0008 peak_vram=61.04GiB
+Epoch 007 batch 0000/0011 loss=4.6267
+Epoch 007 batch 0010/0011 loss=4.5908
+Epoch 007 loss=15.2585 tissue_dice=0.0460 nuclei_f1=0.0010 peak_vram=61.04GiB
+Epoch 008 batch 0000/0011 loss=4.7783
+Epoch 008 batch 0010/0011 loss=4.6452
+Epoch 008 loss=14.2385 tissue_dice=0.0505 nuclei_f1=0.0032 peak_vram=61.04GiB
+Epoch 009 batch 0000/0011 loss=4.5051
+Epoch 009 batch 0010/0011 loss=4.3925
+Epoch 009 loss=13.3912 tissue_dice=0.0544 nuclei_f1=0.0036 peak_vram=61.04GiB
+Epoch 010 batch 0000/0011 loss=4.6959
+Epoch 010 batch 0010/0011 loss=4.3259
+Epoch 010 loss=12.6663 tissue_dice=0.0606 nuclei_f1=0.0039 peak_vram=61.04GiB
+Epoch 011 batch 0000/0011 loss=4.3412
+Epoch 011 batch 0010/0011 loss=3.4595
+Epoch 011 loss=12.0702 tissue_dice=0.0669 nuclei_f1=0.0044 peak_vram=61.04GiB
+Epoch 012 batch 0000/0011 loss=4.1038
+Epoch 012 batch 0010/0011 loss=2.7902
+Epoch 012 loss=11.5543 tissue_dice=0.0761 nuclei_f1=0.0057 peak_vram=61.04GiB
+Epoch 013 batch 0000/0011 loss=3.6116
+Epoch 013 batch 0010/0011 loss=3.2832
+Epoch 013 loss=11.1146 tissue_dice=0.0844 nuclei_f1=0.0081 peak_vram=61.04GiB
+Epoch 014 batch 0000/0011 loss=3.9558
+Epoch 014 batch 0010/0011 loss=3.5575
+Epoch 014 loss=10.7300 tissue_dice=0.0955 nuclei_f1=0.0102 peak_vram=61.04GiB
+Epoch 015 batch 0000/0011 loss=3.3837
+Epoch 015 batch 0010/0011 loss=3.1709
+Epoch 015 loss=10.3775 tissue_dice=0.1062 nuclei_f1=0.0120 peak_vram=61.04GiB
+Epoch 016 batch 0000/0011 loss=3.1916
+Epoch 016 batch 0010/0011 loss=2.9106
+Epoch 016 loss=10.0772 tissue_dice=0.1180 nuclei_f1=0.0133 peak_vram=61.04GiB
+Epoch 017 batch 0000/0011 loss=3.0638
+Epoch 017 batch 0010/0011 loss=2.6757
+Epoch 017 loss=9.8162 tissue_dice=0.1309 nuclei_f1=0.0165 peak_vram=61.04GiB
+Epoch 018 batch 0000/0011 loss=2.9531
+Epoch 018 batch 0010/0011 loss=3.0364
+Epoch 018 loss=9.5726 tissue_dice=0.1409 nuclei_f1=0.0189 peak_vram=61.04GiB
+Epoch 019 batch 0000/0011 loss=3.5842
+Epoch 019 batch 0010/0011 loss=2.8904
+Epoch 019 loss=9.3577 tissue_dice=0.1525 nuclei_f1=0.0209 peak_vram=61.04GiB
+Epoch 020 batch 0000/0011 loss=3.0786
+Epoch 020 batch 0010/0011 loss=2.8530
+Epoch 020 loss=9.1504 tissue_dice=0.1660 nuclei_f1=0.0226 peak_vram=61.04GiB
+Epoch 021 batch 0000/0011 loss=3.0256
+Epoch 021 batch 0010/0011 loss=3.3351
+Epoch 021 loss=8.9592 tissue_dice=0.1773 nuclei_f1=0.0246 peak_vram=61.04GiB
+Epoch 022 batch 0000/0011 loss=2.6097
+Epoch 022 batch 0010/0011 loss=3.3041
+Epoch 022 loss=8.7855 tissue_dice=0.1902 nuclei_f1=0.0268 peak_vram=61.04GiB
+Epoch 023 batch 0000/0011 loss=2.5082
+Epoch 023 batch 0010/0011 loss=3.0327
+Epoch 023 loss=8.6187 tissue_dice=0.2030 nuclei_f1=0.0302 peak_vram=61.04GiB
+Epoch 024 batch 0000/0011 loss=2.3868
+Epoch 024 batch 0010/0011 loss=2.7354
+Epoch 024 loss=8.4610 tissue_dice=0.2149 nuclei_f1=0.0354 peak_vram=61.04GiB
+Epoch 025 batch 0000/0011 loss=2.9959
+Epoch 025 batch 0010/0011 loss=2.5128
+Epoch 025 loss=8.2992 tissue_dice=0.2267 nuclei_f1=0.0389 peak_vram=61.04GiB
+Epoch 026 batch 0000/0011 loss=3.0935
+Epoch 026 batch 0010/0011 loss=2.7644
+Epoch 026 loss=8.1471 tissue_dice=0.2398 nuclei_f1=0.0430 peak_vram=61.04GiB
+Epoch 027 batch 0000/0011 loss=2.0607
+Epoch 027 batch 0010/0011 loss=2.3108
+Epoch 027 loss=8.0016 tissue_dice=0.2536 nuclei_f1=0.0475 peak_vram=61.04GiB
+Epoch 028 batch 0000/0011 loss=3.0494
+Epoch 028 batch 0010/0011 loss=2.0367
+Epoch 028 loss=7.8589 tissue_dice=0.2676 nuclei_f1=0.0525 peak_vram=61.04GiB
+Epoch 029 batch 0000/0011 loss=2.4979
+Epoch 029 batch 0010/0011 loss=2.7911
+Epoch 029 loss=7.7279 tissue_dice=0.2799 nuclei_f1=0.0581 peak_vram=61.04GiB
+Epoch 030 batch 0000/0011 loss=2.5773
+Epoch 030 batch 0010/0011 loss=2.5909
+Epoch 030 loss=7.6014 tissue_dice=0.2919 nuclei_f1=0.0623 peak_vram=61.04GiB
+Epoch 031 batch 0000/0011 loss=2.1140
+Epoch 031 batch 0010/0011 loss=1.8070
+Epoch 031 loss=7.4731 tissue_dice=0.3052 nuclei_f1=0.0695 peak_vram=61.04GiB
+Epoch 032 batch 0000/0011 loss=2.0268
+Epoch 032 batch 0010/0011 loss=2.0783
+Epoch 032 loss=7.3493 tissue_dice=0.3180 nuclei_f1=0.0765 peak_vram=61.04GiB
+Epoch 033 batch 0000/0011 loss=2.0269
+Epoch 033 batch 0010/0011 loss=2.0896
+Epoch 033 loss=7.2285 tissue_dice=0.3302 nuclei_f1=0.0833 peak_vram=61.04GiB
+Epoch 034 batch 0000/0011 loss=2.0137
+Epoch 034 batch 0010/0011 loss=2.3184
+Epoch 034 loss=7.1098 tissue_dice=0.3440 nuclei_f1=0.0897 peak_vram=61.04GiB
+Epoch 035 batch 0000/0011 loss=2.1883
+Epoch 035 batch 0010/0011 loss=2.4635
+Epoch 035 loss=6.9921 tissue_dice=0.3573 nuclei_f1=0.0979 peak_vram=61.04GiB
+Epoch 036 batch 0000/0011 loss=1.8826
+Epoch 036 batch 0010/0011 loss=1.6848
+Epoch 036 loss=6.8804 tissue_dice=0.3706 nuclei_f1=0.1013 peak_vram=61.04GiB
+Epoch 037 batch 0000/0011 loss=1.8946
+Epoch 037 batch 0010/0011 loss=1.7168
+Epoch 037 loss=6.7732 tissue_dice=0.3837 nuclei_f1=0.1089 peak_vram=61.04GiB
+Epoch 038 batch 0000/0011 loss=1.9624
+Epoch 038 batch 0010/0011 loss=1.8278
+Epoch 038 loss=6.6680 tissue_dice=0.3973 nuclei_f1=0.1158 peak_vram=61.04GiB
+Epoch 039 batch 0000/0011 loss=1.8977
+Epoch 039 batch 0010/0011 loss=2.4908
+Epoch 039 loss=6.5675 tissue_dice=0.4126 nuclei_f1=0.1230 peak_vram=61.04GiB
+Epoch 040 batch 0000/0011 loss=1.8835
+Epoch 040 batch 0010/0011 loss=1.8768
+Epoch 040 loss=6.4728 tissue_dice=0.4271 nuclei_f1=0.1299 peak_vram=61.04GiB
+Epoch 041 batch 0000/0011 loss=1.7132
+Epoch 041 batch 0010/0011 loss=1.8303
+Epoch 041 loss=6.3842 tissue_dice=0.4405 nuclei_f1=0.1357 peak_vram=61.04GiB
+Epoch 042 batch 0000/0011 loss=2.0898
+Epoch 042 batch 0010/0011 loss=1.8557
+Epoch 042 loss=6.2994 tissue_dice=0.4532 nuclei_f1=0.1425 peak_vram=61.04GiB
+Epoch 043 batch 0000/0011 loss=1.5743
+Epoch 043 batch 0010/0011 loss=1.7445
+Epoch 043 loss=6.2157 tissue_dice=0.4650 nuclei_f1=0.1521 peak_vram=61.04GiB
+Epoch 044 batch 0000/0011 loss=1.7749
+Epoch 044 batch 0010/0011 loss=1.6710
+Epoch 044 loss=6.1368 tissue_dice=0.4754 nuclei_f1=0.1579 peak_vram=61.04GiB
+Epoch 045 batch 0000/0011 loss=1.7045
+Epoch 045 batch 0010/0011 loss=1.7626
+Epoch 045 loss=6.0615 tissue_dice=0.4854 nuclei_f1=0.1634 peak_vram=61.04GiB
+Epoch 046 batch 0000/0011 loss=1.4251
+Epoch 046 batch 0010/0011 loss=1.7718
+Epoch 046 loss=5.9908 tissue_dice=0.4941 nuclei_f1=0.1702 peak_vram=61.04GiB
+Epoch 047 batch 0000/0011 loss=1.5389
+Epoch 047 batch 0010/0011 loss=1.6319
+Epoch 047 loss=5.9237 tissue_dice=0.5016 nuclei_f1=0.1767 peak_vram=61.04GiB
+Epoch 048 batch 0000/0011 loss=1.5423
+Epoch 048 batch 0010/0011 loss=1.6480
+Epoch 048 loss=5.8569 tissue_dice=0.5085 nuclei_f1=0.1850 peak_vram=61.04GiB
+Epoch 049 batch 0000/0011 loss=1.5760
+Epoch 049 batch 0010/0011 loss=1.4659
+Epoch 049 loss=5.7904 tissue_dice=0.5153 nuclei_f1=0.1911 peak_vram=61.04GiB
+Epoch 050 batch 0000/0011 loss=1.2869
+Epoch 050 batch 0010/0011 loss=1.3097
+Epoch 050 loss=5.7250 tissue_dice=0.5219 nuclei_f1=0.1949 peak_vram=61.04GiB
+Epoch 051 batch 0000/0011 loss=1.5969
+Epoch 051 batch 0010/0011 loss=1.5844
+Epoch 051 loss=5.6663 tissue_dice=0.5271 nuclei_f1=0.1998 peak_vram=61.04GiB
+Epoch 052 batch 0000/0011 loss=1.5556
+Epoch 052 batch 0010/0011 loss=1.9610
+Epoch 052 loss=5.6074 tissue_dice=0.5324 nuclei_f1=0.2050 peak_vram=61.04GiB
+Epoch 053 batch 0000/0011 loss=1.6750
+Epoch 053 batch 0010/0011 loss=1.8128
+Epoch 053 loss=5.5525 tissue_dice=0.5369 nuclei_f1=0.2109 peak_vram=61.04GiB
+Epoch 054 batch 0000/0011 loss=1.5249
+Epoch 054 batch 0010/0011 loss=1.3782
+Epoch 054 loss=5.4982 tissue_dice=0.5417 nuclei_f1=0.2139 peak_vram=61.04GiB
+Epoch 055 batch 0000/0011 loss=1.6991
+Epoch 055 batch 0010/0011 loss=1.2482
+Epoch 055 loss=5.4486 tissue_dice=0.5457 nuclei_f1=0.2162 peak_vram=61.04GiB
+Epoch 056 batch 0000/0011 loss=1.4980
+Epoch 056 batch 0010/0011 loss=1.2555
+Epoch 056 loss=5.4000 tissue_dice=0.5501 nuclei_f1=0.2198 peak_vram=61.04GiB
+Epoch 057 batch 0000/0011 loss=1.4797
+Epoch 057 batch 0010/0011 loss=1.3688
+Epoch 057 loss=5.3537 tissue_dice=0.5546 nuclei_f1=0.2256 peak_vram=61.04GiB
+Epoch 058 batch 0000/0011 loss=1.5053
+Epoch 058 batch 0010/0011 loss=1.4430
+Epoch 058 loss=5.3086 tissue_dice=0.5585 nuclei_f1=0.2315 peak_vram=61.04GiB
+Epoch 059 batch 0000/0011 loss=1.5404
+Epoch 059 batch 0010/0011 loss=1.3387
+Epoch 059 loss=5.2639 tissue_dice=0.5626 nuclei_f1=0.2415 peak_vram=61.04GiB
+Epoch 060 batch 0000/0011 loss=1.7197
+Epoch 060 batch 0010/0011 loss=1.3349
+Epoch 060 loss=5.2213 tissue_dice=0.5667 nuclei_f1=0.2467 peak_vram=61.04GiB
+Epoch 061 batch 0000/0011 loss=1.4354
+Epoch 061 batch 0010/0011 loss=1.4349
+Epoch 061 loss=5.1820 tissue_dice=0.5701 nuclei_f1=0.2510 peak_vram=61.04GiB
+Epoch 062 batch 0000/0011 loss=1.4390
+Epoch 062 batch 0010/0011 loss=1.2731
+Epoch 062 loss=5.1431 tissue_dice=0.5739 nuclei_f1=0.2554 peak_vram=61.04GiB
+Epoch 063 batch 0000/0011 loss=1.1933
+Epoch 063 batch 0010/0011 loss=1.6771
+Epoch 063 loss=5.1041 tissue_dice=0.5779 nuclei_f1=0.2592 peak_vram=61.04GiB
+Epoch 064 batch 0000/0011 loss=1.3738
+Epoch 064 batch 0010/0011 loss=1.4747
+Epoch 064 loss=5.0697 tissue_dice=0.5810 nuclei_f1=0.2646 peak_vram=61.04GiB
+Epoch 065 batch 0000/0011 loss=1.1903
+Epoch 065 batch 0010/0011 loss=1.5720
+Epoch 065 loss=5.0357 tissue_dice=0.5844 nuclei_f1=0.2679 peak_vram=61.04GiB
+Epoch 066 batch 0000/0011 loss=1.0983
+Epoch 066 batch 0010/0011 loss=1.3619
+Epoch 066 loss=5.0022 tissue_dice=0.5880 nuclei_f1=0.2762 peak_vram=61.04GiB
+Epoch 067 batch 0000/0011 loss=1.2609
+Epoch 067 batch 0010/0011 loss=1.1504
+Epoch 067 loss=4.9720 tissue_dice=0.5912 nuclei_f1=0.2785 peak_vram=61.04GiB
+Epoch 068 batch 0000/0011 loss=1.1582
+Epoch 068 batch 0010/0011 loss=0.9917
+Epoch 068 loss=4.9422 tissue_dice=0.5945 nuclei_f1=0.2817 peak_vram=61.04GiB
+Epoch 069 batch 0000/0011 loss=1.2423
+Epoch 069 batch 0010/0011 loss=1.6145
+Epoch 069 loss=4.9115 tissue_dice=0.5983 nuclei_f1=0.2851 peak_vram=61.04GiB
+Epoch 070 batch 0000/0011 loss=1.2150
+Epoch 070 batch 0010/0011 loss=1.3731
+Epoch 070 loss=4.8830 tissue_dice=0.6016 nuclei_f1=0.2866 peak_vram=61.04GiB
+Epoch 071 batch 0000/0011 loss=1.3736
+Epoch 071 batch 0010/0011 loss=1.2076
+Epoch 071 loss=4.8559 tissue_dice=0.6048 nuclei_f1=0.2884 peak_vram=61.04GiB
+Epoch 072 batch 0000/0011 loss=1.3514
+Epoch 072 batch 0010/0011 loss=1.2053
+Epoch 072 loss=4.8316 tissue_dice=0.6073 nuclei_f1=0.2959 peak_vram=61.04GiB
+Epoch 073 batch 0000/0011 loss=1.1144
+Epoch 073 batch 0010/0011 loss=1.1285
+Epoch 073 loss=4.8085 tissue_dice=0.6094 nuclei_f1=0.2974 peak_vram=61.04GiB
+Epoch 074 batch 0000/0011 loss=1.2029
+Epoch 074 batch 0010/0011 loss=1.1228
+Epoch 074 loss=4.7864 tissue_dice=0.6116 nuclei_f1=0.2995 peak_vram=61.04GiB
+Epoch 075 batch 0000/0011 loss=1.1680
+Epoch 075 batch 0010/0011 loss=1.1761
+Epoch 075 loss=4.7649 tissue_dice=0.6138 nuclei_f1=0.3029 peak_vram=61.04GiB
+Epoch 076 batch 0000/0011 loss=1.2687
+Epoch 076 batch 0010/0011 loss=1.1005
+Epoch 076 loss=4.7428 tissue_dice=0.6163 nuclei_f1=0.3066 peak_vram=61.04GiB
+Epoch 077 batch 0000/0011 loss=1.2290
+Epoch 077 batch 0010/0011 loss=1.1545
+Epoch 077 loss=4.7231 tissue_dice=0.6184 nuclei_f1=0.3076 peak_vram=61.04GiB
+Epoch 078 batch 0000/0011 loss=1.2595
+Epoch 078 batch 0010/0011 loss=1.2193
+Epoch 078 loss=4.7045 tissue_dice=0.6204 nuclei_f1=0.3069 peak_vram=61.04GiB
+Epoch 079 batch 0000/0011 loss=1.1927
+Epoch 079 batch 0010/0011 loss=1.4188
+Epoch 079 loss=4.6850 tissue_dice=0.6228 nuclei_f1=0.3144 peak_vram=61.04GiB
+Epoch 080 batch 0000/0011 loss=1.1951
+Epoch 080 batch 0010/0011 loss=1.1808
+Epoch 080 loss=4.6692 tissue_dice=0.6246 nuclei_f1=0.3159 peak_vram=61.04GiB
+Epoch 081 batch 0000/0011 loss=1.3109
+Epoch 081 batch 0010/0011 loss=1.4417
+Epoch 081 loss=4.6542 tissue_dice=0.6263 nuclei_f1=0.3191 peak_vram=61.04GiB
+Epoch 082 batch 0000/0011 loss=1.1326
+Epoch 082 batch 0010/0011 loss=1.0022
+Epoch 082 loss=4.6389 tissue_dice=0.6282 nuclei_f1=0.3298 peak_vram=61.04GiB
+Epoch 083 batch 0000/0011 loss=1.0869
+Epoch 083 batch 0010/0011 loss=1.0129
+Epoch 083 loss=4.6245 tissue_dice=0.6300 nuclei_f1=0.3312 peak_vram=61.04GiB
+Epoch 084 batch 0000/0011 loss=1.1182
+Epoch 084 batch 0010/0011 loss=1.0884
+Epoch 084 loss=4.6101 tissue_dice=0.6318 nuclei_f1=0.3347 peak_vram=61.04GiB
+Epoch 085 batch 0000/0011 loss=1.0870
+Epoch 085 batch 0010/0011 loss=1.1768
+Epoch 085 loss=4.5966 tissue_dice=0.6334 nuclei_f1=0.3369 peak_vram=61.04GiB
+Epoch 086 batch 0000/0011 loss=1.0865
+Epoch 086 batch 0010/0011 loss=1.1168
+Epoch 086 loss=4.5838 tissue_dice=0.6351 nuclei_f1=0.3393 peak_vram=61.04GiB
+Epoch 087 batch 0000/0011 loss=1.2939
+Epoch 087 batch 0010/0011 loss=1.2581
+Epoch 087 loss=4.5721 tissue_dice=0.6367 nuclei_f1=0.3411 peak_vram=61.04GiB
+Epoch 088 batch 0000/0011 loss=1.1059
+Epoch 088 batch 0010/0011 loss=1.1484
+Epoch 088 loss=4.5609 tissue_dice=0.6382 nuclei_f1=0.3432 peak_vram=61.04GiB
+Epoch 089 batch 0000/0011 loss=1.1867
+Epoch 089 batch 0010/0011 loss=0.9334
+Epoch 089 loss=4.5497 tissue_dice=0.6398 nuclei_f1=0.3438 peak_vram=61.04GiB
+Epoch 090 batch 0000/0011 loss=1.1156
+Epoch 090 batch 0010/0011 loss=1.1821
+Epoch 090 loss=4.5389 tissue_dice=0.6412 nuclei_f1=0.3457 peak_vram=61.04GiB
+Epoch 091 batch 0000/0011 loss=1.0988
+Epoch 091 batch 0010/0011 loss=1.0114
+Epoch 091 loss=4.5295 tissue_dice=0.6426 nuclei_f1=0.3466 peak_vram=61.04GiB
+Epoch 092 batch 0000/0011 loss=1.0509
+Epoch 092 batch 0010/0011 loss=0.9148
+Epoch 092 loss=4.5209 tissue_dice=0.6438 nuclei_f1=0.3477 peak_vram=61.04GiB
+Epoch 093 batch 0000/0011 loss=1.0707
+Epoch 093 batch 0010/0011 loss=1.3201
+Epoch 093 loss=4.5133 tissue_dice=0.6450 nuclei_f1=0.3513 peak_vram=61.04GiB
+Epoch 094 batch 0000/0011 loss=1.0969
+Epoch 094 batch 0010/0011 loss=0.9448
+Epoch 094 loss=4.5059 tissue_dice=0.6461 nuclei_f1=0.3520 peak_vram=61.04GiB
+Epoch 095 batch 0000/0011 loss=0.9917
+Epoch 095 batch 0010/0011 loss=1.1435
+Epoch 095 loss=4.4996 tissue_dice=0.6471 nuclei_f1=0.3526 peak_vram=61.04GiB
+Epoch 096 batch 0000/0011 loss=1.1697
+Epoch 096 batch 0010/0011 loss=0.9153
+Epoch 096 loss=4.4937 tissue_dice=0.6481 nuclei_f1=0.3518 peak_vram=61.04GiB
+Epoch 097 batch 0000/0011 loss=0.9723
+Epoch 097 batch 0010/0011 loss=1.0805
+Epoch 097 loss=4.4878 tissue_dice=0.6492 nuclei_f1=0.3544 peak_vram=61.04GiB
+Epoch 098 batch 0000/0011 loss=1.0118
+Epoch 098 batch 0010/0011 loss=1.0932
+Epoch 098 loss=4.4827 tissue_dice=0.6502 nuclei_f1=0.3560 peak_vram=61.04GiB
+Epoch 099 batch 0000/0011 loss=1.0908
+Epoch 099 batch 0010/0011 loss=0.9191
+Epoch 099 loss=4.4778 tissue_dice=0.6511 nuclei_f1=0.3570 peak_vram=61.04GiB
+Fold 3: best nuclei_f1=0.3570  best tissue_dice=0.6511
+
+===== Fold 5/5 =====
+Pretrained backbone: loaded 196/196 encoder tensors from timm 'convnextv2_tiny'.
+Computing inverse-frequency class weights (one pass over the training data)...
+  tissue weights: [3.141, 0.016, 0.041, 0.478, 0.761, 1.563]
+  nuclei weights: [0.017, 0.259, 0.578, 0.137, 1.264, 0.046, 2.31, 4.447, 0.526, 0.415]
+Epoch 000 batch 0000/0011 loss=42.7964
+Epoch 000 batch 0010/0011 loss=11.5454
+Epoch 000 loss=26.5242 tissue_dice=0.0314 nuclei_f1=0.0011 peak_vram=61.04GiB
+Epoch 001 batch 0000/0011 loss=10.0095
+Epoch 001 batch 0010/0011 loss=8.3660
+Epoch 001 loss=24.4054 tissue_dice=0.0324 nuclei_f1=0.0011 peak_vram=61.05GiB
+Epoch 002 batch 0000/0011 loss=8.0094
+Epoch 002 batch 0010/0011 loss=7.0714
+Epoch 002 loss=21.7618 tissue_dice=0.0341 nuclei_f1=0.0011 peak_vram=61.05GiB
+Epoch 003 batch 0000/0011 loss=7.3938
+Epoch 003 batch 0010/0011 loss=6.4743
+Epoch 003 loss=19.3733 tissue_dice=0.0357 nuclei_f1=0.0012 peak_vram=61.05GiB
+Epoch 004 batch 0000/0011 loss=6.0470
+Epoch 004 batch 0010/0011 loss=5.3360
+Epoch 004 loss=17.3795 tissue_dice=0.0385 nuclei_f1=0.0012 peak_vram=61.05GiB
+Epoch 005 batch 0000/0011 loss=4.9603
+Epoch 005 batch 0010/0011 loss=4.3488
+Epoch 005 loss=15.8499 tissue_dice=0.0408 nuclei_f1=0.0012 peak_vram=61.05GiB
+Epoch 006 batch 0000/0011 loss=4.8176
+Epoch 006 batch 0010/0011 loss=4.5516
+Epoch 006 loss=14.6148 tissue_dice=0.0432 nuclei_f1=0.0012 peak_vram=61.05GiB
+Epoch 007 batch 0000/0011 loss=4.8258
+Epoch 007 batch 0010/0011 loss=4.1887
+Epoch 007 loss=13.5899 tissue_dice=0.0465 nuclei_f1=0.0015 peak_vram=61.05GiB
+Epoch 008 batch 0000/0011 loss=4.2948
+Epoch 008 batch 0010/0011 loss=5.0346
+Epoch 008 loss=12.7371 tissue_dice=0.0508 nuclei_f1=0.0018 peak_vram=61.05GiB
+Epoch 009 batch 0000/0011 loss=4.7187
+Epoch 009 batch 0010/0011 loss=4.4135
+Epoch 009 loss=12.0545 tissue_dice=0.0544 nuclei_f1=0.0019 peak_vram=61.05GiB
+Epoch 010 batch 0000/0011 loss=4.9158
+Epoch 010 batch 0010/0011 loss=4.8359
+Epoch 010 loss=11.4703 tissue_dice=0.0595 nuclei_f1=0.0024 peak_vram=61.05GiB
+Epoch 011 batch 0000/0011 loss=4.2265
+Epoch 011 batch 0010/0011 loss=3.8499
+Epoch 011 loss=10.9868 tissue_dice=0.0656 nuclei_f1=0.0032 peak_vram=61.05GiB
+Epoch 012 batch 0000/0011 loss=3.3080
+Epoch 012 batch 0010/0011 loss=4.0807
+Epoch 012 loss=10.5599 tissue_dice=0.0731 nuclei_f1=0.0042 peak_vram=61.05GiB
+Epoch 013 batch 0000/0011 loss=3.8332
+Epoch 013 batch 0010/0011 loss=3.8372
+Epoch 013 loss=10.1992 tissue_dice=0.0836 nuclei_f1=0.0066 peak_vram=61.05GiB
+Epoch 014 batch 0000/0011 loss=3.0529
+Epoch 014 batch 0010/0011 loss=5.0599
+Epoch 014 loss=9.8895 tissue_dice=0.0938 nuclei_f1=0.0074 peak_vram=61.05GiB
+Epoch 015 batch 0000/0011 loss=4.1512
+Epoch 015 batch 0010/0011 loss=3.2378
+Epoch 015 loss=9.6282 tissue_dice=0.1034 nuclei_f1=0.0085 peak_vram=61.05GiB
+Epoch 016 batch 0000/0011 loss=3.4910
