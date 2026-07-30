@@ -43,3 +43,12 @@ wandb/
 *.pth
 *.ckpt
 dataset/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+
+# Local experiment output
+predictions/
+*.geojson.bak
