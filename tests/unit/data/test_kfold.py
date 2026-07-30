@@ -36,9 +36,9 @@ def test_kfold_is_deterministic() -> None:
 
 
 def test_kfold_rejects_invalid_parameters() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="num_folds must be at least two"):
         create_kfold(_samples(10), num_folds=1, seed=42)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="at least num_folds samples"):
         create_kfold(_samples(3), num_folds=5, seed=42)
 
 

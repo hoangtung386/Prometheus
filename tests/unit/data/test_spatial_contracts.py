@@ -19,7 +19,7 @@ def test_box_coordinate_round_trip() -> None:
 
 
 def test_rotate90_updates_all_geometry(monkeypatch) -> None:
-    monkeypatch.setattr("prometheus.data.transforms.multitask.random.choice", lambda _: 1)
+    monkeypatch.setattr("prometheus.data.transforms.random.choice", lambda _: 1)
     sample = TransformSample(
         image=np.zeros((3, 8, 8), dtype=np.float32),
         tissue_mask=np.zeros((8, 8), dtype=np.uint8),
@@ -45,7 +45,5 @@ def test_normalization_excludes_and_preserves_letterbox_padding() -> None:
     )
     normalized = NormalizeMultitask()(sample)
     assert np.all(normalized.image[:, ~valid_mask] == 0)
-    expected = (
-        image[:, valid_mask] - NormalizeMultitask.mean[:, None]
-    ) / NormalizeMultitask.std[:, None]
+    expected = (image[:, valid_mask] - NormalizeMultitask.mean[:, None]) / NormalizeMultitask.std[:, None]
     np.testing.assert_allclose(normalized.image[:, valid_mask], expected, atol=1e-6)
