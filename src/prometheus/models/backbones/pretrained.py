@@ -18,6 +18,8 @@ import torch
 from ...config import PrometheusModelConfig
 from .shared_convnext import SharedConvNeXtBackbone
 
+__all__ = ["DEFAULT_VARIANT", "load_pretrained_backbone"]
+
 DEFAULT_VARIANT = "convnextv2_tiny.fcmae_ft_in22k_in1k"
 
 
@@ -63,7 +65,7 @@ def load_pretrained_backbone(
             f"got dims={config.encoder_dims}, depths={config.encoder_depths}."
         )
     try:
-        import timm
+        import timm  # noqa: PLC0415 - only needed when actually loading pretrained weights
     except ImportError as error:  # pragma: no cover - environment guard
         raise ImportError("Pretrained backbone init requires `timm` (see requirements.txt).") from error
 

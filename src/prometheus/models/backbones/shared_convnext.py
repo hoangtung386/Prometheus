@@ -1,17 +1,29 @@
-"""ConvNeXt pyramid with genuinely shared shallow representations."""
+"""ConvNeXt-V2 encoder producing a four-level pyramid shared by both tasks.
+
+Parameter names mirror ``timm``'s ``convnextv2_*`` layout so
+:func:`prometheus.models.backbones.pretrained.load_pretrained_backbone` can map weights
+tensor-by-tensor. Renaming anything here breaks pretrained loading.
+"""
 
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
+from torch import nn
 
-from ...blocks import ConvNeXtBlock
 from ...config import PrometheusModelConfig
-from ...utils import LayerNorm
+from ...layers import ConvNeXtBlock, LayerNorm
 from ..contracts import FeaturePyramid
+
+__all__ = ["SharedConvNeXtBackbone"]
 
 
 class SharedConvNeXtBackbone(nn.Module):
+    """Stem at stride 4, then four stages; returns features at strides 4, 8, 16 and 32.
+
+    Stochastic depth increases linearly across all blocks, which is the schedule the
+    pretrained weights were trained with.
+    """
+
     def __init__(self, config: PrometheusModelConfig) -> None:
         super().__init__()
         dims, depths = config.encoder_dims, config.encoder_depths
