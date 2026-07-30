@@ -1,4 +1,12 @@
-"""Create and persist deterministic PUMA train/validation splits."""
+"""Deterministic, persisted train/validation splits.
+
+Splits are written to a manifest and validated against the discovered dataset on reload, so a
+resumed or repeated run cannot quietly train on its own validation images.
+
+Stratification is by primary/metastatic only. It does **not** balance the rare tissue
+classes, so all necrosis-bearing images can land in one fold; see
+``docs/phan-tich-tissue-va-ke-hoach.md`` section 3.12.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +15,15 @@ import random
 from pathlib import Path
 
 from ...domain import PumaSample
+
+__all__ = [
+    "KFOLD_SCHEMA_VERSION",
+    "SPLIT_SCHEMA_VERSION",
+    "create_kfold",
+    "create_split",
+    "load_or_create_kfold",
+    "load_or_create_split",
+]
 
 SPLIT_SCHEMA_VERSION = 1
 KFOLD_SCHEMA_VERSION = 1
@@ -26,6 +43,7 @@ def create_split(
     validation_fraction: float,
     seed: int,
 ) -> tuple[list[str], list[str]]:
+    """Split samples into ``(train_ids, validation_ids)``, stratified by tumour site."""
     if len(samples) < 2:
         raise ValueError("At least two samples are required to create a split")
     if not 0.0 < validation_fraction < 1.0:
@@ -55,6 +73,7 @@ def load_or_create_split(
     seed: int,
     manifest_path: str | Path | None = None,
 ) -> tuple[list[str], list[str]]:
+    """Return the cached split, or create and persist it once."""
     path = Path(manifest_path) if manifest_path else None
     current_ids = {sample.sample_id for sample in samples}
     if path is not None and path.is_file():
