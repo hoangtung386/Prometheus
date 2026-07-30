@@ -1,26 +1,12 @@
-__version__ = "0.4.0"
+"""Prometheus: tissue segmentation and nuclei detection for the PUMA challenge.
 
-from .losses import (
-    BCEWithLogitsLoss,
-    CombinedLoss,
-    DiceLoss,
-    FocalLoss,
-    MulticlassCombinedLoss,
-    MultiClassDiceLoss,
-    TverskyLoss,
-)
-from .metrics import SegmentationEvaluator
+Import from :mod:`prometheus.api` to compose a run; this module only re-exports the model
+and its output contract so ``import prometheus`` stays cheap and free of optional
+dependencies.
+"""
+
 from .models import MultitaskOutput, PrometheusNet
 
-__all__ = [
-    "PrometheusNet",
-    "MultitaskOutput",
-    "SegmentationEvaluator",
-    "BCEWithLogitsLoss",
-    "DiceLoss",
-    "FocalLoss",
-    "CombinedLoss",
-    "MultiClassDiceLoss",
-    "MulticlassCombinedLoss",
-    "TverskyLoss",
-]
+__version__ = "0.5.0"
+
+__all__ = ["MultitaskOutput", "PrometheusNet", "__version__"]
