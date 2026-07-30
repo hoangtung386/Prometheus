@@ -3,23 +3,36 @@
 from __future__ import annotations
 
 import torch
-import torch.nn.functional as F
+from torch.nn import functional as F
 
 from ..data.targets import CenterPointTargets
 
+__all__ = ["center_focal_loss", "nuclei_regression_losses"]
 
-def center_focal_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+
+def center_focal_loss(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    alpha: float = 2.0,
+    beta: float = 4.0,
+) -> torch.Tensor:
+    """CornerNet/CenterNet penalty-reduced focal loss on a Gaussian center heatmap.
+
+    Only the exact peak counts as positive; the Gaussian skirt around it is a *discounted*
+    negative via ``(1 - target) ** beta``, so a near miss is penalised far less than a
+    detection in empty tissue. Normalised by the positive count so the loss does not scale
+    with nucleus density, which varies by an order of magnitude across PUMA regions.
+    """
     probabilities = logits.sigmoid().clamp(1e-4, 1 - 1e-4)
     positives = target.eq(1).float()
     negatives = target.lt(1).float()
-    negative_weights = (1 - target).pow(4)
-    positive_loss = -(probabilities.log()) * (1 - probabilities).pow(2) * positives
-    negative_loss = -(1 - probabilities).log() * probabilities.pow(2) * negative_weights * negatives
-    positive_count = positives.sum()
-    return (positive_loss.sum() + negative_loss.sum()) / positive_count.clamp_min(1)
+    positive_loss = -probabilities.log() * (1 - probabilities).pow(alpha) * positives
+    negative_loss = -(1 - probabilities).log() * probabilities.pow(alpha) * (1 - target).pow(beta) * negatives
+    return (positive_loss.sum() + negative_loss.sum()) / positives.sum().clamp_min(1)
 
 
-def _gather_map(feature_map: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
+def _gather(feature_map: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
+    """Gather ``(C, H, W)`` features at flat spatial ``indices``, returning ``(N, C)``."""
     channels = feature_map.shape[0]
     return feature_map.reshape(channels, -1).transpose(0, 1)[indices]
 
@@ -27,26 +40,33 @@ def _gather_map(feature_map: torch.Tensor, indices: torch.Tensor) -> torch.Tenso
 def nuclei_regression_losses(
     class_logits: torch.Tensor,
     offset_map: torch.Tensor,
-    size_map: torch.Tensor | None,
+    size_map: torch.Tensor,
     targets: CenterPointTargets,
     class_weight: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return ``(class, offset, size)`` losses evaluated only at ground-truth centers.
+
+    Sampling at the annotated centers rather than densely is what makes classification
+    independent of the class-agnostic detector: the classifier never sees, and is never
+    penalised on, background cells.
+    """
     class_losses, offset_losses, size_losses = [], [], []
     for batch_index, indices in enumerate(targets.indices):
         if indices.numel() == 0:
             continue
         class_losses.append(
             F.cross_entropy(
-                _gather_map(class_logits[batch_index], indices),
+                _gather(class_logits[batch_index], indices),
                 targets.labels[batch_index],
                 weight=class_weight,
             )
         )
-        offset_losses.append(F.l1_loss(_gather_map(offset_map[batch_index], indices), targets.offsets[batch_index]))
-        if size_map is not None:
-            size_losses.append(F.l1_loss(_gather_map(size_map[batch_index], indices), targets.sizes[batch_index]))
+        offset_losses.append(F.l1_loss(_gather(offset_map[batch_index], indices), targets.offsets[batch_index]))
+        size_losses.append(F.l1_loss(_gather(size_map[batch_index], indices), targets.sizes[batch_index]))
+
     zero = class_logits.sum() * 0.0
-    class_loss = torch.stack(class_losses).mean() if class_losses else zero
-    offset_loss = torch.stack(offset_losses).mean() if offset_losses else zero
-    size_loss = torch.stack(size_losses).mean() if size_losses else zero
-    return class_loss, offset_loss, size_loss
+    return (
+        torch.stack(class_losses).mean() if class_losses else zero,
+        torch.stack(offset_losses).mean() if offset_losses else zero,
+        torch.stack(size_losses).mean() if size_losses else zero,
+    )
