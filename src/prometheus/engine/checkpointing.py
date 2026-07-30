@@ -1,4 +1,9 @@
-"""Architecture-aware checkpoint schema for the refactored engine."""
+"""Versioned checkpoint schema.
+
+Every checkpoint stores its schema version, architecture name, architecture version and the
+full resolved config, and all four are checked on load. Loading weights whose channel layout
+silently disagrees with the current taxonomy is the failure this prevents.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +15,14 @@ import numpy as np
 import torch
 
 from ..config import ProjectConfig
+
+__all__ = [
+    "CHECKPOINT_SCHEMA_VERSION",
+    "assert_checkpoint_compatible",
+    "load_engine_checkpoint",
+    "save_engine_checkpoint",
+    "select_inference_state",
+]
 
 CHECKPOINT_SCHEMA_VERSION = 2
 
@@ -26,6 +39,11 @@ def save_engine_checkpoint(
     scaler=None,
     ema_state=None,
 ) -> None:
+    """Write a checkpoint atomically, including optimizer, schedule, scaler and RNG state.
+
+    Written to a temporary file and renamed, so a run interrupted mid-write (routine on a
+    Colab runtime) cannot leave a truncated checkpoint behind.
+    """
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -57,6 +75,7 @@ def save_engine_checkpoint(
 
 
 def load_engine_checkpoint(path: str | Path, map_location="cpu") -> dict:
+    """Load a checkpoint, rejecting an unsupported schema or architecture."""
     payload = torch.load(Path(path), map_location=map_location, weights_only=False)
     if payload.get("schema_version") != CHECKPOINT_SCHEMA_VERSION:
         raise ValueError("Expected a Prometheus checkpoint with schema version 2")
@@ -77,6 +96,7 @@ def select_inference_state(payload: dict) -> dict:
 
 
 def assert_checkpoint_compatible(payload: dict, config: ProjectConfig) -> None:
+    """Raise unless the checkpoint's model config matches ``config`` field for field."""
     checkpoint_model = payload.get("config", {}).get("model")
     current_model = asdict(config.model)
     if checkpoint_model != current_model:
