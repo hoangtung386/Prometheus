@@ -1,18 +1,16 @@
-# Runtime dependencies for PrometheusNet training & inference on PUMA.
-# Pinned for reproducible notebook/Colab installs.
-# Single source of truth for version bounds: pyproject.toml.
+# Runtime dependencies for PrometheusNet training and inference on PUMA.
+# For Colab installs only; pyproject.toml is the source of truth for version bounds.
 
-# Keep Colab's preinstalled NumPy when it satisfies the minimum. Downgrading
-# NumPy inside a live Python 3.12 kernel can leave binary extensions ABI-mismatched.
+# Keep Colab's preinstalled NumPy when it satisfies the minimum: downgrading NumPy inside a
+# live kernel leaves compiled extensions ABI-mismatched.
 numpy>=1.24.0
 torch>=2.0.0
 timm>=0.9.0
 opencv-python-headless>=4.8.0
 tifffile>=2023.0.0
-matplotlib>=3.7                           # --extra viz
+matplotlib>=3.7                           # the `viz` extra, for notebook previews
 tomli>=2.0.0; python_version < "3.11"
 
-# Install the local package itself (editable, so code edits take effect
-# without reinstall).  Because all runtime deps are already listed above,
-# pip will skip pyproject.toml dependency resolution.
+# Install this package itself, editable so edits take effect without reinstalling. All
+# runtime dependencies are pinned above, so pip skips pyproject resolution.
 -e .
