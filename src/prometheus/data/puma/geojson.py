@@ -9,28 +9,56 @@ from typing import Any
 
 import numpy as np
 
-from ...domain import NucleusClass, NucleusInstance, TissueClass, normalize_puma_label
-from ...domain.geometry import polygon_box_xyxy, polygon_vertex_mean
+from ...domain import (
+    NucleusClass,
+    NucleusInstance,
+    TissueClass,
+    normalize_puma_label,
+    polygon_box_xyxy,
+    polygon_vertex_mean,
+)
+from ...domain.geometry import Polygon
+
+__all__ = [
+    "feature_label",
+    "geometry_polygons",
+    "parse_nuclei_geojson",
+    "parse_tissue_geojson",
+    "read_geojson",
+]
+
+_MINIMUM_RING_VERTICES = 3
 
 
 def read_geojson(path: str | Path, retries: int = 2, delay: float = 1.0) -> dict[str, Any]:
+    """Read a GeoJSON document, retrying transient IO errors.
+
+    The retry exists because the supported training workstation reads annotations from a
+    network-backed Google Drive mount, where a single ``OSError`` is usually transient.
+    """
     geojson_path = Path(path)
     last_error: OSError | None = None
     for attempt in range(retries + 1):
         try:
             with geojson_path.open(encoding="utf-8") as file_obj:
                 data = json.load(file_obj)
-            if not isinstance(data, dict):
-                raise ValueError(f"GeoJSON root must be an object: {geojson_path}")
-            return data
         except OSError as error:
             last_error = error
             if attempt < retries:
                 time.sleep(delay)
+            continue
+        if not isinstance(data, dict):
+            raise TypeError(f"GeoJSON root must be an object: {geojson_path}")
+        return data
     raise OSError(f"Could not read annotation file {geojson_path}") from last_error
 
 
 def feature_label(feature: dict[str, Any]) -> str:
+    """Return the normalized class name of a GeoJSON feature.
+
+    Accepts both PUMA layouts: a flat ``properties.label`` and QuPath's
+    ``properties.classification.name``.
+    """
     properties = feature.get("properties") or {}
     raw_label = properties.get("label")
     if raw_label is None:
@@ -42,7 +70,20 @@ def feature_label(feature: dict[str, Any]) -> str:
     return normalize_puma_label(str(raw_label))
 
 
-def geometry_polygons(geometry: dict[str, Any] | None) -> list[np.ndarray]:
+def _ring(coordinates: Any) -> np.ndarray | None:
+    """Return an open ``[N, 2]`` ring, or ``None`` when it is degenerate."""
+    ring = np.asarray(coordinates, dtype=np.float32).reshape(-1, 2)
+    if len(ring) > 1 and np.array_equal(ring[0], ring[-1]):
+        ring = ring[:-1]
+    return ring if len(ring) >= _MINIMUM_RING_VERTICES else None
+
+
+def geometry_polygons(geometry: dict[str, Any] | None) -> list[Polygon]:
+    """Return every polygon of a ``Polygon``/``MultiPolygon`` geometry, holes included.
+
+    Non-areal geometry types are skipped rather than raising: PUMA annotations
+    occasionally carry point or line features that carry no region information.
+    """
     if not geometry:
         return []
     geometry_type = geometry.get("type")
@@ -53,19 +94,25 @@ def geometry_polygons(geometry: dict[str, Any] | None) -> list[np.ndarray]:
         candidates = coordinates
     else:
         return []
-    polygons = []
+
+    polygons: list[Polygon] = []
     for candidate in candidates:
         if not candidate:
             continue
-        exterior = np.asarray(candidate[0], dtype=np.float32).reshape(-1, 2)
-        if len(exterior) > 1 and np.array_equal(exterior[0], exterior[-1]):
-            exterior = exterior[:-1]
-        if len(exterior) >= 3:
-            polygons.append(exterior)
+        exterior = _ring(candidate[0])
+        if exterior is None:
+            continue
+        holes = tuple(ring for ring in (_ring(item) for item in candidate[1:]) if ring is not None)
+        polygons.append(Polygon(exterior=exterior, holes=holes))
     return polygons
 
 
 def parse_nuclei_geojson(path: str | Path, strict: bool = True) -> list[NucleusInstance]:
+    """Parse nuclei annotations, keeping touching same-class nuclei as separate instances.
+
+    Only the exterior ring is used: the official evaluator matches on the arithmetic mean
+    of a nucleus outline, and nuclei are not annotated with interior rings.
+    """
     data = read_geojson(path)
     instances: list[NucleusInstance] = []
     for feature_index, feature in enumerate(data.get("features", [])):
@@ -87,9 +134,9 @@ def parse_nuclei_geojson(path: str | Path, strict: bool = True) -> list[NucleusI
                 NucleusInstance(
                     instance_id=instance_id,
                     label=label,
-                    polygon=polygon,
-                    centroid=polygon_vertex_mean(polygon),
-                    box_xyxy=polygon_box_xyxy(polygon),
+                    polygon=polygon.exterior,
+                    centroid=polygon_vertex_mean(polygon.exterior),
+                    box_xyxy=polygon_box_xyxy(polygon.exterior),
                 )
             )
     return instances
@@ -98,9 +145,10 @@ def parse_nuclei_geojson(path: str | Path, strict: bool = True) -> list[NucleusI
 def parse_tissue_geojson(
     path: str | Path,
     strict: bool = True,
-) -> list[tuple[TissueClass, np.ndarray]]:
+) -> list[tuple[TissueClass, Polygon]]:
+    """Parse tissue annotations into ``(class, polygon-with-holes)`` pairs."""
     data = read_geojson(path)
-    regions: list[tuple[TissueClass, np.ndarray]] = []
+    regions: list[tuple[TissueClass, Polygon]] = []
     for feature_index, feature in enumerate(data.get("features", [])):
         try:
             label = TissueClass(feature_label(feature))
@@ -110,6 +158,5 @@ def parse_tissue_geojson(
                     f"Unknown tissue label in {path}, feature {feature_index}: {feature.get('properties')}"
                 ) from None
             continue
-        for polygon in geometry_polygons(feature.get("geometry")):
-            regions.append((label, polygon))
+        regions.extend((label, polygon) for polygon in geometry_polygons(feature.get("geometry")))
     return regions
