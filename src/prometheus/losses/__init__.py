@@ -1,28 +1,22 @@
-from .class_weights import compute_class_weights, inverse_frequency_weights
+"""Tissue, nuclei and multitask loss composition."""
+
+from .class_weights import (
+    BACKGROUND_TISSUE_WEIGHT,
+    class_weights_from_counts,
+    compute_class_weights,
+)
 from .multitask import LossWeights, PrometheusMultitaskLoss
 from .nuclei import center_focal_loss, nuclei_regression_losses
-from .segmentation import (
-    BCEWithLogitsLoss,
-    CombinedLoss,
-    DiceLoss,
-    FocalLoss,
-    MulticlassCombinedLoss,
-    MultiClassDiceLoss,
-    TverskyLoss,
-)
+from .segmentation import MulticlassCombinedLoss, MultiClassDiceLoss
 
 __all__ = [
-    "BCEWithLogitsLoss",
-    "CombinedLoss",
-    "DiceLoss",
-    "FocalLoss",
+    "BACKGROUND_TISSUE_WEIGHT",
+    "LossWeights",
     "MultiClassDiceLoss",
     "MulticlassCombinedLoss",
-    "TverskyLoss",
-    "LossWeights",
     "PrometheusMultitaskLoss",
     "center_focal_loss",
+    "class_weights_from_counts",
     "compute_class_weights",
-    "inverse_frequency_weights",
     "nuclei_regression_losses",
 ]
