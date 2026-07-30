@@ -7,6 +7,8 @@ from pathlib import Path
 
 from ..domain import Detection, NucleusClass, Track, nucleus_class_for_track
 
+__all__ = ["write_nuclei_json"]
+
 
 def _class_name(label: NucleusClass | str, track: Track) -> str:
     if isinstance(label, NucleusClass):
@@ -38,6 +40,7 @@ def write_nuclei_json(
     path: str | Path,
     track: Track = Track.TRACK_2,
 ) -> None:
+    """Write detections in the official Multiple Polygons schema for ``track``."""
     polygons = [
         {
             "name": _class_name(detection.label, track),
