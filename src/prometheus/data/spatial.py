@@ -1,4 +1,9 @@
-"""Aspect-ratio preserving spatial transforms and their inverse mappings."""
+"""Aspect-ratio preserving spatial transforms and their exact inverses.
+
+The model sees a letterboxed square; the challenge scores the original image. Every
+``*_to_model`` function has a ``*_to_source`` inverse, and inference must apply it before
+metrics or submission writing. All coordinates are pixel-space ``(x, y)``.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +12,15 @@ import numpy as np
 import torch
 
 from ..domain import ImageMeta
+
+__all__ = [
+    "boxes_to_model",
+    "boxes_to_source",
+    "letterbox_image",
+    "points_to_model",
+    "points_to_source",
+    "restore_mask",
+]
 
 
 def letterbox_image(
@@ -37,6 +51,7 @@ def letterbox_image(
 
 
 def points_to_model(points: np.ndarray, meta: ImageMeta) -> np.ndarray:
+    """Map ``[N, 2]`` source-image points into letterboxed model coordinates."""
     transformed = np.asarray(points, dtype=np.float32).reshape(-1, 2).copy()
     transformed[:, 0] = transformed[:, 0] * meta.scale_xy[0] + meta.pad_xy[0]
     transformed[:, 1] = transformed[:, 1] * meta.scale_xy[1] + meta.pad_xy[1]
@@ -44,6 +59,7 @@ def points_to_model(points: np.ndarray, meta: ImageMeta) -> np.ndarray:
 
 
 def points_to_source(points: np.ndarray, meta: ImageMeta) -> np.ndarray:
+    """Map ``[N, 2]`` model points back to the source image, clipped to its bounds."""
     transformed = np.asarray(points, dtype=np.float32).reshape(-1, 2).copy()
     transformed[:, 0] = (transformed[:, 0] - meta.pad_xy[0]) / meta.scale_xy[0]
     transformed[:, 1] = (transformed[:, 1] - meta.pad_xy[1]) / meta.scale_xy[1]
@@ -53,6 +69,7 @@ def points_to_source(points: np.ndarray, meta: ImageMeta) -> np.ndarray:
 
 
 def boxes_to_model(boxes: np.ndarray, meta: ImageMeta) -> np.ndarray:
+    """Map ``[N, 4]`` xyxy boxes into model coordinates."""
     boxes = np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
     if boxes.size == 0:
         return boxes.copy()
@@ -61,6 +78,7 @@ def boxes_to_model(boxes: np.ndarray, meta: ImageMeta) -> np.ndarray:
 
 
 def boxes_to_source(boxes: np.ndarray, meta: ImageMeta) -> np.ndarray:
+    """Map ``[N, 4]`` xyxy boxes back to source-image coordinates."""
     boxes = np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
     if boxes.size == 0:
         return boxes.copy()
@@ -68,6 +86,11 @@ def boxes_to_source(boxes: np.ndarray, meta: ImageMeta) -> np.ndarray:
 
 
 def restore_mask(mask: torch.Tensor | np.ndarray, meta: ImageMeta) -> np.ndarray:
+    """Crop the padding off a model-space mask and resize it back to the source size.
+
+    Nearest-neighbour resampling, because the values are class indices: interpolating them
+    would invent classes that lie numerically between two real ones.
+    """
     array = mask.detach().cpu().numpy() if isinstance(mask, torch.Tensor) else np.asarray(mask)
     pad_x, pad_y = meta.pad_xy
     resized_height, resized_width = meta.resized_size
