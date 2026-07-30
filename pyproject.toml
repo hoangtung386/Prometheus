@@ -4,8 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prometheus"
-version = "0.4.0"
+version = "0.5.0"
 description = "Research framework for tissue segmentation and nuclei detection on PUMA"
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.0.0",
@@ -20,10 +22,11 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "ruff>=0.5.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11",
+    "pre-commit>=3.7",
 ]
 viz = ["matplotlib>=3.7"]
-yolo = ["ultralytics>=8.0"]
 
 [project.scripts]
 prometheus = "prometheus.cli.main:main"
@@ -31,18 +34,90 @@ prometheus = "prometheus.cli.main:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# --- tests -------------------------------------------------------------------------
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
 markers = [
-    "integration: integration tests",
-    "slow: slow tests",
-    "gpu: tests requiring CUDA",
+    "integration: exercises more than one package together",
+    "slow: takes more than a few seconds",
+    "gpu: requires CUDA",
 ]
+
+[tool.coverage.run]
+source = ["prometheus"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
+
+# --- lint and format ---------------------------------------------------------------
 
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = [
+    "A",    # builtin shadowing
+    "ARG",  # unused arguments
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # import sorting
+    "N",    # pep8-naming
+    "PERF", # obvious performance traps
+    "PIE",
+    "PLC", "PLE", "PLR", "PLW",  # pylint subset
+    "PT",   # pytest style
+    "PTH",  # prefer pathlib
+    "RET",  # return simplification
+    "RUF",
+    "SIM",  # simplification
+    "TID",  # tidy imports
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    # Relative imports inside the package are this project's consistent style and keep the
+    # package relocatable; the submission runtime vendors `src/prometheus` verbatim.
+    "TID252",
+    # `functional as F` is the universal PyTorch convention; renaming it helps nobody.
+    "N812",
+    # Config-driven engine entry points genuinely take many arguments.
+    "PLR0913",
+    # In tests, "magic" values are the expected values.
+    "PLR2004",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ARG", "SLF001"]
+
+[tool.ruff.lint.pylint]
+max-args = 12
+
+[tool.ruff.format]
+line-ending = "lf"
+
+# --- typing ------------------------------------------------------------------------
+
+[tool.mypy]
+# Deliberately not pinning `python_version`: mypy then targets the running interpreter,
+# and pinning 3.10 makes it fail to parse the 3.12+ syntax in modern numpy stubs. The 3.10
+# floor from `requires-python` is enforced by ruff's `target-version` instead.
+files = ["src/prometheus"]
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
