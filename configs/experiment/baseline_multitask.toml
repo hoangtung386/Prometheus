@@ -1,3 +1,13 @@
+# Reference experiment. Copy this file rather than editing it in place, so the run
+# recorded in `resolved_config.json` always maps back to a committed config.
+#
+# Known limitations of this recipe, measured, with fixes queued in
+# docs/phan-tich-tissue-va-ke-hoach.md:
+#   - one optimizer step per batch of whole images gives ~11 steps/epoch on 205 images,
+#     roughly 200x fewer than a converged segmentation recipe needs (section 3.1);
+#   - there is no rare-class oversampling, so necrosis and blood_vessel are seen a few
+#     dozen times in a whole run (section 3.2).
+
 [experiment]
 name = "baseline_multitask_v2_transfer"
 seed = 42
@@ -19,6 +29,9 @@ enabled = true
 
 [data]
 root = "/content/drive/MyDrive/PUMA/dataset_PUMA"
+# The challenge test set is 1024x1024 at 40x. Keep this at 1024 and feed native-resolution
+# regions of interest: training on downsampled images and submitting on native ones is a
+# silent domain shift. Verify with `prometheus audit --data-root ...`.
 image_size = 1024
 validation_fraction = 0.1
 split_seed = 42
@@ -42,6 +55,7 @@ gradient_clip_norm = 1.0
 warmup_epochs = 10
 min_lr = 0.000001
 log_interval = 10
+ema_decay = 0.0
 
 [loss]
 tissue_ce = 1.0
@@ -50,9 +64,17 @@ center_focal = 1.0
 nuclei_class = 1.0
 offset = 1.0
 size = 0.1
+gaussian_radius = 2
+class_weighting = true
+# Square-root inverse frequency. Plain inverse frequency (1.0) spans 420:1 on this dataset
+# and destabilises early training; background is pinned low separately because the
+# challenge does not score tissue_white_background.
+class_weight_power = 0.5
 
 [evaluation]
 nuclei_radius_px = 15.0
+# "nuclei/macro_f1_summed" or "tissue/micro_dice". best_tissue.ckpt always tracks the
+# official tissue micro Dice regardless of this setting.
 checkpoint_metric = "nuclei/macro_f1_summed"
 track = "track2"
 
