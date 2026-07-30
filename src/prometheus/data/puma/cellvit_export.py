@@ -8,10 +8,12 @@ import cv2
 import numpy as np
 
 from ...domain import NucleusClass, NucleusInstance
+from .dataset import read_native_image
 from .discovery import discover_puma_samples
 from .geojson import parse_nuclei_geojson
-from .multitask_dataset import read_native_image
 from .splits import create_split
+
+__all__ = ["CELLVIT_PUMA_CLASS_ORDER", "CELLVIT_TYPE_ID", "export_cellvit_dataset", "rasterize_cellvit_instances"]
 
 CELLVIT_PUMA_CLASS_ORDER = (
     NucleusClass.ENDOTHELIUM,
@@ -57,7 +59,7 @@ def _classifier_config(dataset_dir: Path, checkpoint: Path, output_dir: Path) ->
   notes: CellViT-SAM-H-x40 PUMA Track-2
   log_comment: cellvit-sam-h-puma
   tags: [Classifier, PUMA]
-  wandb_dir: {output_dir / 'wandb'}
+  wandb_dir: {output_dir / "wandb"}
   log_dir: {output_dir}
   level: Info
 random_seed: 42
@@ -69,8 +71,8 @@ data:
   normalize_stains_val: false
   input_shape: [1024, 1024]
   num_classes: 10
-  train_filelist: {dataset_dir / 'splits' / 'train.csv'}
-  val_filelist: {dataset_dir / 'splits' / 'val.csv'}
+  train_filelist: {dataset_dir / "splits" / "train.csv"}
+  val_filelist: {dataset_dir / "splits" / "val.csv"}
   label_map:
 {labels}
 cellvit_path: {checkpoint}
@@ -105,6 +107,10 @@ def export_cellvit_dataset(
     validation_fraction: float = 0.2,
     seed: int = 42,
 ) -> dict[str, object]:
+    """Write the CellViT++ ``SegmentationDataset`` layout, splits and classifier config.
+
+    Returns a summary dict with the generated paths and sample counts.
+    """
     destination = Path(destination).resolve()
     checkpoint = Path(checkpoint).resolve()
     output_dir = Path(output_dir).resolve()
@@ -121,9 +127,11 @@ def export_cellvit_dataset(
         instances = parse_nuclei_geojson(sample.nuclei_annotation_path, strict=True)
         instance_map, type_map = rasterize_cellvit_instances(instances, image.shape[:2])
         _write_rgb_png(image_dir / f"{sample.sample_id}.png", image)
+        # CellViT++ SegmentationDataset expects a pickled dict per label file, not an
+        # array, so the object wrapper is part of their on-disk contract.
         np.save(
             label_dir / f"{sample.sample_id}.npy",
-            {"inst_map": instance_map, "type_map": type_map},
+            np.asarray({"inst_map": instance_map, "type_map": type_map}, dtype=object),
             allow_pickle=True,
         )
 
