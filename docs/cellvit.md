@@ -1,5 +1,10 @@
 # CellViT-SAM-H nuclei pipeline
 
+> **Priority note.** The nuclei branch already scores near the Track-2 runner-up
+> (21.72 macro F1 against KongNet's 26.56), while tissue sits below the challenge baseline.
+> This path is documented and working, but it is not where the remaining points are. See
+> [`phan-tich-tissue-va-ke-hoach.md`](phan-tich-tissue-va-ke-hoach.md) section 2.4.
+
 The production nuclei path uses the official CellViT++ transfer boundary:
 
 1. `CellViT-SAM-H-x40-AMP.pth` detects and segments cells at 0.25 MPP.
