@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from ..data.targets import encode_centerpoint_targets
 from ..domain import MultitaskBatch
@@ -13,9 +13,13 @@ from ..models import MultitaskOutput
 from .nuclei import center_focal_loss, nuclei_regression_losses
 from .segmentation import MulticlassCombinedLoss
 
+__all__ = ["LossWeights", "PrometheusMultitaskLoss"]
+
 
 @dataclass(frozen=True)
 class LossWeights:
+    """Weight of every loss term. Field names must match :class:`~prometheus.config.LossConfig`."""
+
     tissue_ce: float = 1.0
     tissue_dice: float = 1.0
     center_focal: float = 1.0
@@ -23,8 +27,21 @@ class LossWeights:
     offset: float = 1.0
     size: float = 0.1
 
+    @classmethod
+    def field_names(cls) -> tuple[str, ...]:
+        """Weight field names, used to project a ``LossConfig`` onto this dataclass."""
+        return tuple(field.name for field in fields(cls))
+
 
 class PrometheusMultitaskLoss(nn.Module):
+    """Sum of the tissue and nuclei terms, reporting every component separately.
+
+    Returns raw and weighted values for all six terms so a run can be diagnosed from the
+    log alone: a collapsed task shows up as one term stalling, not as an opaque total.
+    """
+
+    nuclei_class_weights: torch.Tensor | None
+
     def __init__(
         self,
         num_nucleus_types: int = 10,
@@ -41,29 +58,27 @@ class PrometheusMultitaskLoss(nn.Module):
         self.output_stride = output_stride
         self.weights = weights or LossWeights()
         self.gaussian_radius = gaussian_radius
-        # Per-class weights (inverse frequency) counter the majority-class collapse on the
-        # imbalanced PUMA tasks. Registered as buffers so .to(device) relocates them.
         self.tissue = MulticlassCombinedLoss(
             ce_weight=self.weights.tissue_ce,
             dice_weight=self.weights.tissue_dice,
             class_weights=tissue_class_weights,
         )
-        if nuclei_class_weights is not None:
-            self.register_buffer("nuclei_class_weights", nuclei_class_weights.float())
-        else:
-            self.nuclei_class_weights = None
+        self.register_buffer(
+            "nuclei_class_weights",
+            None if nuclei_class_weights is None else nuclei_class_weights.detach().float(),
+            persistent=False,
+        )
 
     def forward(self, output: MultitaskOutput, batch: MultitaskBatch) -> dict[str, torch.Tensor]:
         tissue_ce, tissue_dice = self.tissue.components(output.tissue_logits, batch.tissue.mask)
         targets = encode_centerpoint_targets(
             batch.nuclei,
-            output.nuclei_center_logits.shape[-2:],
+            (output.nuclei_center_logits.shape[-2], output.nuclei_center_logits.shape[-1]),
             self.output_stride,
             self.num_nucleus_types,
             self.gaussian_radius,
             class_agnostic=True,
         )
-        center = center_focal_loss(output.nuclei_center_logits, targets.heatmap)
         nuclei_class, offset, size = nuclei_regression_losses(
             output.nuclei_class_logits,
             output.nuclei_offsets,
@@ -74,16 +89,14 @@ class PrometheusMultitaskLoss(nn.Module):
         raw = {
             "tissue_ce": tissue_ce,
             "tissue_dice": tissue_dice,
-            "center_focal": center,
+            "center_focal": center_focal_loss(output.nuclei_center_logits, targets.heatmap),
             "nuclei_class": nuclei_class,
             "offset": offset,
             "size": size,
         }
-        weighted = {
-            name: raw[name] * getattr(self.weights, name)
-            for name in raw
+        weighted = {name: value * getattr(self.weights, name) for name, value in raw.items()}
+        return {
+            **{f"raw/{name}": value for name, value in raw.items()},
+            **{f"weighted/{name}": value for name, value in weighted.items()},
+            "total": torch.stack(list(weighted.values())).sum(),
         }
-        result = {f"raw/{name}": value for name, value in raw.items()}
-        result.update({f"weighted/{name}": value for name, value in weighted.items()})
-        result["total"] = sum(weighted.values())
-        return result
