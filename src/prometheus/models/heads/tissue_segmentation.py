@@ -1,16 +1,25 @@
-"""Independent-depth semantic tissue decoder."""
+"""Semantic tissue decoder whose depth is independent of the encoder's.
+
+The decoder emits logits at stride 4 and upsamples bilinearly to the input size. That is
+ample for the large classes but is a hard ceiling on thin structures: a capillary wall is a
+few pixels wide at 40x. See ``docs/phan-tich-tissue-va-ke-hoach.md`` section 3.11d.
+"""
 
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
-from ...blocks import ConvNeXtBlock
+from ...layers import ConvNeXtBlock
 from ..contracts import FeaturePyramid
+
+__all__ = ["DecoderLevel", "TissueSegmentationHead"]
 
 
 class DecoderLevel(nn.Module):
+    """One upsampling step: project, add the encoder skip, then refine with ConvNeXt blocks."""
+
     def __init__(self, input_dim: int, skip_dim: int, output_dim: int, depth: int) -> None:
         super().__init__()
         self.input_projection = nn.Conv2d(input_dim, output_dim, kernel_size=1)
@@ -23,6 +32,13 @@ class DecoderLevel(nn.Module):
 
 
 class TissueSegmentationHead(nn.Module):
+    """Decode the feature pyramid into tissue logits plus a context map for the nuclei branch.
+
+    ``forward`` returns ``(logits, context)``. The context is the stride-8 decoder feature,
+    which the gated fusion adds to the nuclei branch on its own grid rather than resampling
+    a stride-32 bottleneck.
+    """
+
     def __init__(self, dims: list[int], decoder_depths: list[int], num_classes: int) -> None:
         super().__init__()
         self.s16 = DecoderLevel(dims[3], dims[2], dims[2], decoder_depths[0])
