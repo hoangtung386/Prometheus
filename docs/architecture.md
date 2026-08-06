@@ -81,6 +81,14 @@ overlap, keeping the scored class cannot lose points.
 The priority is a documented default, not a fact. Validate it against real data with
 `prometheus audit`, which reports how much area each class gains over the naive baseline.
 
+## Run artifacts
+
+Every run writes three checkpoints (`last`, `best_primary`, `best_tissue`) plus
+`train.log`, `metrics.jsonl`, `metrics.json`, `resolved_config.json` and
+`class_weights.json`. `train.log` exists because stdout does not survive a Colab disconnect
+and `metrics.jsonl` records only numbers; it appends across resumes so one file holds the
+whole history of a run. `tests/integration/test_run_artifacts.py` pins all of it.
+
 ## Metrics
 
 The challenge tissue metric is a **micro** Dice: pool all predictions, compute per-class

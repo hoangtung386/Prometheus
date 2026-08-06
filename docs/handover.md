@@ -32,9 +32,29 @@ and the leaderboard comparison — is in
 
 ```bash
 uv sync --extra dev
-uv run pytest -q                                  # 128 tests, ~4s, CPU only
+uv run pytest -q                                   # ~190 tests, seconds, CPU only
 uv run prometheus audit --data-root /path/to/puma  # do this before any experiment
 ```
+
+A finished run leaves this in `paths.run_dir`:
+
+| File | What it is |
+|---|---|
+| `last.ckpt` | exact resume point: live weights, optimizer, schedule, scaler, RNG |
+| `best_primary.ckpt` | best `evaluation.checkpoint_metric` |
+| `best_tissue.ckpt` | best official tissue micro Dice |
+| `train.log` | full timestamped log, appended across resumes |
+| `metrics.jsonl` | one JSON record per epoch |
+| `metrics.json` | metrics of the last epoch |
+| `resolved_config.json` | the exact config the run used |
+| `class_weights.json` | the class weights actually applied, with the signature that keys them |
+
+`train.log` matters more than it looks: a Colab disconnect takes the printed cell output with
+it, and `metrics.jsonl` holds only numbers. The class weights that were used, the
+pretrained-loading report and any stale-cache warning are the lines you want when a run comes
+out wrong, and they are not numbers. `tests/integration/test_run_artifacts.py` trains for two
+epochs on a synthetic dataset and asserts every file above exists, that the checkpoint loads
+back into a model, and that a resume appends to the log rather than truncating it.
 
 The audit answers three questions that decide what to work on, and that the metrics alone
 cannot distinguish from a modelling limitation:
