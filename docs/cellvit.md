@@ -15,10 +15,25 @@ This is intentionally separate from `PrometheusNet`. CellViT++ has its own HV-ma
 postprocessing and checkpoint schema; copying SAM-H tensors into the CenterPoint head
 would not transfer the learned detector.
 
+## Getting the weights
+
+`CellViT-SAM-H-x40-AMP.pth` is distributed as a
+[Google Drive folder](https://drive.google.com/drive/folders/1ujtMcxAr5kYYuvnbglfYZZnRH3ZOli79)
+linked from the CellViT++ README. It is **not** published on Hugging Face by the authors, so a
+`HF_TOKEN` does not help; download it by hand. Third-party Hugging Face mirrors exist but ship
+a TorchScript export rather than the `.pth` state dict CellViT++ loads, so they are not a
+substitute.
+
+The weights are PanNuke-derived and carry a non-commercial licence — the CellViT++ README
+states outright that not all checkpoints can be redistributed. Review it before any use beyond
+research.
+
 ## Prepare data
 
-Download `CellViT-SAM-H-x40-AMP.pth` from the official CellViT++ checkpoint folder,
-then export PUMA polygons to instance and type maps:
+The export **does not need the weights**. `export_cellvit_dataset` never opens the checkpoint;
+it writes the path into the generated YAML as `cellvit_path`, and CellViT++ resolves it later
+in its own environment. Run the export whenever you like and fetch the weights before training
+the classifier:
 
 ```bash
 prometheus prepare-cellvit \
