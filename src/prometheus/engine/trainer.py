@@ -16,6 +16,7 @@ from ..losses import LossWeights, PrometheusMultitaskLoss, compute_class_weights
 from ..models import PrometheusNet
 from .checkpointing import assert_checkpoint_compatible, load_engine_checkpoint, save_engine_checkpoint
 from .ema import WeightEma
+from .run_log import RunLog
 from .schedule import build_optimizer, warmup_cosine_lambda
 from .validation import evaluate_multitask
 
@@ -24,6 +25,7 @@ __all__ = ["PrometheusTrainer"]
 _CLASS_WEIGHT_CACHE = "class_weights.json"
 _CLASS_WEIGHT_CACHE_SCHEMA = 2
 _HISTORY_FILE = "metrics.jsonl"
+_LOG_FILE = "train.log"
 
 
 def seed_everything(seed: int) -> None:
@@ -69,6 +71,8 @@ class PrometheusTrainer:
             json.dumps(asdict(config), indent=2),
             encoding="utf-8",
         )
+        self.log = RunLog(self.run_dir / _LOG_FILE)
+        self.log.session(f"run {config.name} | device {self.device} | seed {config.seed}")
         seed_everything(config.seed)
 
         self.optimizer = build_optimizer(
@@ -140,9 +144,9 @@ class PrometheusTrainer:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
             if cached.get("signature") == signature:
                 return torch.tensor(cached["tissue"]), torch.tensor(cached["nuclei"])
-            print(f"Class-weight cache is stale (policy or masks changed); recomputing: {cache_path}")
+            self.log(f"Class-weight cache is stale (policy or masks changed); recomputing: {cache_path}")
 
-        print("Computing class weights (one pass over the training data)...")
+        self.log("Computing class weights (one pass over the training data)...")
         tissue_weights, nuclei_weights = compute_class_weights(
             self.train_loader,
             self.config.model.num_tissue_classes,
@@ -160,8 +164,8 @@ class PrometheusTrainer:
             ),
             encoding="utf-8",
         )
-        print(f"  tissue weights: {[round(value, 3) for value in tissue_weights.tolist()]}")
-        print(f"  nuclei weights: {[round(value, 3) for value in nuclei_weights.tolist()]}")
+        self.log(f"  tissue weights: {[round(value, 3) for value in tissue_weights.tolist()]}")
+        self.log(f"  nuclei weights: {[round(value, 3) for value in nuclei_weights.tolist()]}")
         return tissue_weights, nuclei_weights
 
     # --- training --------------------------------------------------------------------
@@ -196,7 +200,7 @@ class PrometheusTrainer:
             for name, value in losses.items():
                 totals[name] = totals.get(name, 0.0) + float(value.detach())
             if batch_index % self.config.trainer.log_interval == 0:
-                print(
+                self.log(
                     f"Epoch {epoch:03d} batch {batch_index:04d}/{len(self.train_loader):04d} "
                     f"loss={float(losses['total'].detach()):.4f}"
                 )
@@ -236,7 +240,7 @@ class PrometheusTrainer:
             }
             self._checkpoint(epoch, last_metrics, evaluation.tissue_micro_dice)
             self._record(epoch, last_metrics)
-            print(self._epoch_summary(epoch, evaluation))
+            self.log(self._epoch_summary(epoch, evaluation))
         return last_metrics
 
     # --- bookkeeping -----------------------------------------------------------------
