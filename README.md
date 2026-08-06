@@ -126,8 +126,8 @@ uv run pytest -q
 git diff --check
 ```
 
-All four run in CI on Python 3.10 and 3.12. The test suite is CPU-only and never downloads
-model weights. `uv run pre-commit install` wires the same checks into your commits.
+The test suite is CPU-only and never downloads model weights, so it runs in seconds.
+`uv run pre-commit install` wires the same checks into your commits.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the conventions these gates enforce.
 
